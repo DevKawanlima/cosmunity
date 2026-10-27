@@ -1,5 +1,7 @@
 package com.cosmunity.cosmunity_backend.controller;
 
+import com.cosmunity.cosmunity_backend.dto.LoginRequest;
+import com.cosmunity.cosmunity_backend.dto.LoginResponse;
 import com.cosmunity.cosmunity_backend.dto.RegisterRequest;
 import com.cosmunity.cosmunity_backend.dto.UserResponse;
 import com.cosmunity.cosmunity_backend.service.AuthService;
@@ -23,7 +25,11 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        UserResponse resposta = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(resposta);
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }
