@@ -1,13 +1,12 @@
+
 package com.cosmunity.cosmunity_backend.dto;
 
-import java.util.UUID;
-
 public record UserResponse(
-        UUID id,
+        Long id,
         String email,
         String nome,
-        String nomeUsuario,
-        String nivel,
-        Integer xp
+        String fotoUrl,
+        Boolean emailConfirmado,
+        Boolean ativo
 ) {
 }

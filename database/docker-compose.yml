@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: cosmunity-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: cosmunity
+      POSTGRES_USER: cosmunity
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cosmunity -d cosmunity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

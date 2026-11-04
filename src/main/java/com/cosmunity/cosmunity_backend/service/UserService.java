@@ -1,3 +1,4 @@
+
 package com.cosmunity.cosmunity_backend.service;
 
 import com.cosmunity.cosmunity_backend.dto.UserResponse;
@@ -16,8 +17,17 @@ public class UserService {
 
     public UserResponse buscarPerfil(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
-        return new UserResponse(user.getId(), user.getEmail(), user.getNome(),
-                user.getNomeUsuario(), user.getNivel(), user.getXp());
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Usuário não encontrado.")
+                );
+
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getNome(),
+                user.getFotoUrl(),
+                user.getEmailConfirmado(),
+                user.getAtivo()
+        );
     }
 }

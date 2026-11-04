@@ -33,3 +33,11 @@ build/
 .vscode/
 application-local.properties
 *.swp
+
+/database/.env
+
+/teste-login.json
+/teste-cadastro.json
+/teste-artista.json
+/database/.env
+/src/main/resources/application-local.properties

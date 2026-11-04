@@ -1,49 +1,55 @@
+
 package com.cosmunity.cosmunity_backend.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "usuario")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_usuario")
+    private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(name = "senha_hash", nullable = false)
-    private String senhaHash;
-
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String nome;
 
-    @Column(name = "nome_usuario", nullable = false, unique = true)
-    private String nomeUsuario;
+    @Column(nullable = false, unique = true, length = 255)
+    private String email;
 
-    @Column(name = "data_nascimento")
-    private LocalDateTime dataNascimento;
+    @Column(name = "senha_hash", nullable = false, length = 255)
+    private String senhaHash;
 
-    @Column(name = "idade_verificada")
-    private Boolean idadeVerificada = false;
+    @Column(name = "foto_url")
+    private String fotoUrl;
+
+    @Column(name = "email_confirmado", nullable = false)
+    private Boolean emailConfirmado = false;
 
     @Column(nullable = false)
-    private String nivel = "iniciante";
+    private Boolean ativo = true;
 
-    @Column(nullable = false)
-    private Integer xp = 0;
+    @Column(name = "criado_em", nullable = false)
+    private OffsetDateTime criadoEm;
 
-    @Column(name = "criado_em")
-    private LocalDateTime criadoEm = LocalDateTime.now();
+    @Column(name = "atualizado_em")
+    private OffsetDateTime atualizadoEm;
 
     public User() {
     }
 
-    public UUID getId() {
+    public Long getId() {
         return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     public String getEmail() {
@@ -62,57 +68,45 @@ public class User {
         this.senhaHash = senhaHash;
     }
 
-    public String getNome() {
-        return nome;
+    public String getFotoUrl() {
+        return fotoUrl;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setFotoUrl(String fotoUrl) {
+        this.fotoUrl = fotoUrl;
     }
 
-    public String getNomeUsuario() {
-        return nomeUsuario;
+    public Boolean getEmailConfirmado() {
+        return emailConfirmado;
     }
 
-    public void setNomeUsuario(String nomeUsuario) {
-        this.nomeUsuario = nomeUsuario;
+    public void setEmailConfirmado(Boolean emailConfirmado) {
+        this.emailConfirmado = emailConfirmado;
     }
 
-    public LocalDateTime getDataNascimento() {
-        return dataNascimento;
+    public Boolean getAtivo() {
+        return ativo;
     }
 
-    public void setDataNascimento(LocalDateTime dataNascimento) {
-        this.dataNascimento = dataNascimento;
+    public void setAtivo(Boolean ativo) {
+        this.ativo = ativo;
     }
 
-    public Boolean getIdadeVerificada() {
-        return idadeVerificada;
-    }
-
-    public void setIdadeVerificada(Boolean idadeVerificada) {
-        this.idadeVerificada = idadeVerificada;
-    }
-
-    public String getNivel() {
-        return nivel;
-    }
-
-    public void setNivel(String nivel) {
-        this.nivel = nivel;
-    }
-
-    public Integer getXp() {
-        return xp;
-    }
-
-    public void setXp(Integer xp) {
-        this.xp = xp;
-    }
-
-    public LocalDateTime getCriadoEm() {
+    public OffsetDateTime getCriadoEm() {
         return criadoEm;
     }
+
+    public OffsetDateTime getAtualizadoEm() {
+        return atualizadoEm;
+    }
+
+    @PrePersist
+    public void antesDeSalvar() {
+        criadoEm = OffsetDateTime.now();
+    }
+
+    @PreUpdate
+    public void antesDeAtualizar() {
+        atualizadoEm = OffsetDateTime.now();
+    }
 }
-
-

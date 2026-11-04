@@ -1,0 +1,7 @@
+spring.datasource.password=175540100
+
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+
+jwt.secret=CosMunity-A3-Chave-Secreta-Jwt-X9k2
+jwt.expiration-ms=86400000
