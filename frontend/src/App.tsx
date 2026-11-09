@@ -1,6 +1,7 @@
 import './extra.css'
 import { AppProvider, useApp, BARE, ARTIST_ONLY } from './store'
-import { MapFab, MapPanel, PublicShell, Shell } from './layout'
+import { BackNavigation, MapFab, MapPanel, PublicShell, Shell } from './layout'
+import { showPrototypeNavigator } from './services/config'
 import { OverlayHost, ToastStack } from './overlays'
 import { Forgot, Landing, Login, PhoneVerify, Reset, Signup, VerifyEmail } from './screens/access'
 import { Dashboard, Marketplace, Products, ProductDetail, SearchResults, ServiceDetail, Services } from './screens/discover'
@@ -73,7 +74,7 @@ function Router() {
 function Frame() {
   const { screen, loggedIn, session } = useApp()
   const page = ARTIST_ONLY.has(screen) && session !== 'artist' ? <ArtistGate /> : <Router />
-  if (BARE.has(screen)) return page
+  if (BARE.has(screen)) return <><div className="history-back-bare"><BackNavigation /></div>{page}</>
   if (screen === 1) return <PublicShell>{page}</PublicShell>
   if (loggedIn) return <Shell>{page}</Shell>
   return <PublicShell><div className="page public-page">{page}</div></PublicShell>
@@ -85,8 +86,8 @@ export default function App() {
       <Frame />
       <OverlayHost />
       <ToastStack />
-      <MapPanel />
-      <MapFab />
+      {showPrototypeNavigator && <MapPanel />}
+      {showPrototypeNavigator && <MapFab />}
     </AppProvider>
   )
 }

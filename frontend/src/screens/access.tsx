@@ -4,6 +4,8 @@ import { Avatar, Badge, Btn, Checkbox, EventCard, Field, Logo, ProductCard, Serv
 import { useApp } from '../store'
 import { artists, ph } from '../data'
 import { emailOk, passwordRules } from '../lib'
+import { backendMode } from '../services/config'
+import { register as registerApi } from '../services/auth'
 
 export function AuthLayout({ children, title, subtitle, back }: { children: ReactNode; title: string; subtitle?: string; back?: [string, number] }) {
   const { go } = useApp()
@@ -67,7 +69,22 @@ export function Signup() {
   const [sent, setSent] = useState(false)
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
   const e = { name: f.name.trim().length < 2 ? 'Informe seu nome.' : '', email: !emailOk(f.email) ? 'Digite um e-mail válido.' : '', pw: passwordRules(f.pw).some((r) => !r[1]) ? 'A senha não atende aos requisitos.' : '', pw2: f.pw2 !== f.pw || !f.pw2 ? 'As senhas precisam ser iguais.' : '', terms: !f.terms ? 'Aceite os termos para continuar.' : '' }
-  const submit = () => { setSent(true); if (Object.values(e).some(Boolean)) return toast('error', 'Revise os campos destacados', 'Alguns dados precisam de atenção.'); toast('success', 'Conta criada!', `Enviamos um código para ${f.email}.`); go(3) }
+  const submit = async () => {
+    setSent(true)
+    if (Object.values(e).some(Boolean)) return toast('error', 'Revise os campos destacados', 'Alguns dados precisam de atenção.')
+    if (backendMode) {
+      try {
+        await registerApi(f.name.trim(), f.email.trim(), f.pw)
+        toast('success', 'Conta cadastrada!', 'Entre com seu e-mail e senha.')
+        go(4)
+      } catch (error) {
+        toast('error', 'Falha ao cadastrar', error instanceof Error ? error.message : 'Tente novamente.')
+      }
+    } else {
+      toast('success', 'Cadastro simulado!', `Continuando a demonstração para ${f.email}.`)
+      go(3)
+    }
+  }
   return (
     <AuthLayout title="Crie sua conta" subtitle="Entre para a comunidade cosplay em menos de um minuto." back={['Voltar ao início', 1]}>
       <div className="form-stack">
@@ -107,10 +124,15 @@ export function VerifyEmail() {
 
 export function Login() {
   const { login, go, toast } = useApp()
-  const [f, setF] = useState({ email: 'marina@email.com', pw: '', remember: true })
+  const [f, setF] = useState({ email: backendMode ? '' : 'marina@email.com', pw: '', remember: true })
   const [tried, setTried] = useState(false)
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
-  const submit = () => { setTried(true); if (!emailOk(f.email) || f.pw.length < 1) return toast('error', 'Não foi possível entrar', 'Confira seu e-mail e senha.'); login() }
+  const submit = async () => {
+    setTried(true)
+    if (!emailOk(f.email) || f.pw.length < 1) return toast('error', 'Não foi possível entrar', 'Confira seu e-mail e senha.')
+    try { await login(f.email.trim(), f.pw) }
+    catch (error) { toast('error', 'Não foi possível entrar', error instanceof Error ? error.message : 'Confira os dados.') }
+  }
   return (
     <AuthLayout title="Bem-vinda de volta" subtitle="Entre para continuar na sua comunidade." back={['Voltar ao início', 1]}>
       <div className="form-stack">
@@ -120,7 +142,7 @@ export function Login() {
       </div>
       <Btn full size="lg" iconRight={<ArrowRight size={18} />} onClick={submit}>Entrar</Btn>
       <p className="auth-link">Ainda não tem conta? <button onClick={() => go(2)}>Criar conta</button></p>
-      <small className="proto-hint">Protótipo: digite qualquer senha para entrar.</small>
+      {!backendMode && <small className="proto-hint">Demonstração: qualquer senha permite navegar pelas telas.</small>}
     </AuthLayout>
   )
 }

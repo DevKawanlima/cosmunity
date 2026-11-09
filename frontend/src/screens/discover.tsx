@@ -197,10 +197,10 @@ export function SellerCard({ id }: { id: string }) {
 }
 
 export function ProductDetail() {
-  const { params, products, go, startChat } = useApp()
+  const { params, products, go, startChat, loggedIn, canEditArtistContent } = useApp()
   const p = products.find((x) => x.id === params.productId) ?? products[0]
   const a = artistById(p.artistId)
-  const mine = p.artistId === 'me'
+  const mine = canEditArtistContent(p.artistId)
   const more = products.filter((x) => x.artistId === p.artistId && x.id !== p.id && x.status === 'Ativo').slice(0, 3)
   return (
     <>
@@ -222,7 +222,7 @@ export function ProductDetail() {
           {mine ? (
             <div className="btn-col"><Btn full icon={<Pencil size={17} />} onClick={() => go(24, { productId: p.id })}>Editar este anúncio</Btn><Btn full variant="secondary" onClick={() => go(22)}>Ir para meus produtos</Btn></div>
           ) : (
-            <div className="btn-col"><Btn full size="lg" icon={<MessageCircle size={18} />} onClick={() => startChat(a.id, { type: 'product', id: p.id })}>Conversar com artista</Btn><Btn full variant="secondary" onClick={() => go(15, { artistId: a.id })}>Ver perfil do artista</Btn></div>
+            <div className="btn-col"><Btn full size="lg" icon={<MessageCircle size={18} />} onClick={() => startChat(a.id, { type: 'product', id: p.id })}>{loggedIn ? 'Conversar com o artista' : 'Entrar para conversar'}</Btn><Btn full variant="secondary" onClick={() => go(15, { artistId: a.id })}>Ver perfil do artista</Btn></div>
           )}
           <SellerCard id={a.id} />
         </div>
@@ -233,10 +233,10 @@ export function ProductDetail() {
 }
 
 export function ServiceDetail() {
-  const { params, services, go, startChat } = useApp()
+  const { params, services, go, startChat, loggedIn, canEditArtistContent } = useApp()
   const s = services.find((x) => x.id === params.serviceId) ?? services[0]
   const a = artistById(s.artistId)
-  const mine = s.artistId === 'me'
+  const mine = canEditArtistContent(s.artistId)
   const more = services.filter((x) => x.id !== s.id && x.status === 'Ativo' && x.cat === s.cat).slice(0, 3)
   return (
     <>
@@ -261,7 +261,7 @@ export function ServiceDetail() {
           {mine ? (
             <div className="btn-col"><Btn full icon={<Pencil size={17} />} onClick={() => go(27, { serviceId: s.id })}>Editar este serviço</Btn></div>
           ) : (
-            <div className="btn-col"><Btn full size="lg" icon={<MessageCircle size={18} />} onClick={() => startChat(a.id, { type: 'service', id: s.id })}>Solicitar orçamento</Btn><Btn full variant="secondary" onClick={() => go(15, { artistId: a.id })}>Ver perfil do artista</Btn></div>
+            <div className="btn-col"><Btn full size="lg" icon={<MessageCircle size={18} />} onClick={() => startChat(a.id, { type: 'service', id: s.id })}>{loggedIn ? 'Solicitar orçamento' : 'Entrar para conversar'}</Btn><Btn full variant="secondary" onClick={() => go(15, { artistId: a.id })}>Ver perfil do artista</Btn></div>
           )}
           <SellerCard id={a.id} />
         </div>

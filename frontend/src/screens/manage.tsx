@@ -67,9 +67,9 @@ function ListRow({ img, title, meta, price, status, onView, onEdit, onToggle, on
 }
 
 export function MyProducts() {
-  const { go, products, setProducts, openOverlay, upsert, remove } = useApp()
+  const { go, products, setProducts, openOverlay, upsert, remove, canEditArtistContent } = useApp()
   const [q, setQ] = useState(''); const [st, setSt] = useState('all')
-  const list = products.filter((p) => p.artistId === 'me' && (st === 'all' || p.status === st) && p.name.toLowerCase().includes(q.toLowerCase()))
+  const list = products.filter((p) => canEditArtistContent(p.artistId) && (st === 'all' || p.status === st) && p.name.toLowerCase().includes(q.toLowerCase()))
   return (
     <>
       <PageHeading title="Meus produtos" description="Gerencie apenas os anúncios publicados por você." action={<Btn icon={<Plus size={17} />} onClick={() => go(23)}>Cadastrar produto</Btn>} />
@@ -87,12 +87,12 @@ export function MyProducts() {
 }
 
 export function ProductForm({ mode }: { mode: 'create' | 'edit' }) {
-  const { go, params, products, setProducts, upsert, remove, toast, openOverlay } = useApp()
+  const { go, params, products, setProducts, upsert, remove, toast, openOverlay, canEditArtistContent } = useApp()
   const edit = mode === 'edit'
-  const cur = edit ? products.find((p) => p.id === params.productId) ?? products.find((p) => p.artistId === 'me') : undefined
+  const cur = edit ? products.find((p) => p.id === params.productId) : undefined
   const [f, setF] = useState({ name: cur?.name ?? '', desc: cur?.desc ?? '', cat: cur?.cat ?? productCats[0], price: cur ? String(cur.price) : '', condition: cur?.condition ?? 'Novo', avail: cur?.avail ?? 'order', images: cur?.images ?? [] as string[], status: cur?.status ?? 'Ativo' })
   const [tried, setTried] = useState(false); const [step, setStep] = useState<'edit' | 'preview'>('edit')
-  if (edit && cur && cur.artistId !== 'me') return <NoPermission text="Este anúncio pertence a outro artista. Você só pode editar anúncios publicados por você." />
+  if (edit && (!cur || !canEditArtistContent(cur.artistId))) return <NoPermission text="Anúncio não encontrado ou você não tem permissão para editá-lo." />
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
   const price = Number(f.price.replace(/\D/g, ''))
   const e = { name: f.name.trim().length < 5 ? 'Dê um nome claro ao produto (mín. 5 letras).' : '', desc: f.desc.trim().length < 30 ? 'Descreva o produto com ao menos 30 caracteres.' : '', price: !price ? 'Informe um preço válido.' : '', images: !f.images.length ? 'Adicione ao menos uma imagem.' : '' }
@@ -148,9 +148,9 @@ export function ProductForm({ mode }: { mode: 'create' | 'edit' }) {
 }
 
 export function MyServices() {
-  const { go, services, setServices, openOverlay, upsert, remove } = useApp()
+  const { go, services, setServices, upsert, remove, openOverlay, canEditArtistContent } = useApp()
   const [q, setQ] = useState(''); const [st, setSt] = useState('all')
-  const list = services.filter((s) => s.artistId === 'me' && (st === 'all' || s.status === st) && s.name.toLowerCase().includes(q.toLowerCase()))
+  const list = services.filter((s) => canEditArtistContent(s.artistId) && (st === 'all' || s.status === st) && s.name.toLowerCase().includes(q.toLowerCase()))
   return (
     <>
       <PageHeading title="Meus serviços" description="Serviços publicados por você." action={<Btn icon={<Plus size={17} />} onClick={() => go(26)}>Cadastrar serviço</Btn>} />
@@ -168,12 +168,12 @@ export function MyServices() {
 }
 
 export function ServiceForm({ mode }: { mode: 'create' | 'edit' }) {
-  const { go, params, services, setServices, upsert, remove, toast, openOverlay } = useApp()
+  const { go, params, services, setServices, upsert, remove, toast, openOverlay, canEditArtistContent } = useApp()
   const edit = mode === 'edit'
-  const cur = edit ? services.find((s) => s.id === params.serviceId) ?? services.find((s) => s.artistId === 'me') : undefined
+  const cur = edit ? services.find((s) => s.id === params.serviceId) : undefined
   const [f, setF] = useState({ name: cur?.name ?? '', desc: cur?.desc ?? '', cat: cur?.cat ?? serviceCats[0], base: cur ? String(cur.base) : '', time: cur?.time ?? '', type: cur?.type ?? 'Sob encomenda', extra: cur?.extra ?? '', images: cur?.images ?? [] as string[], status: cur?.status ?? 'Ativo' })
   const [tried, setTried] = useState(false)
-  if (edit && cur && cur.artistId !== 'me') return <NoPermission text="Este serviço pertence a outro artista. Você só pode editar serviços publicados por você." />
+  if (edit && (!cur || !canEditArtistContent(cur.artistId))) return <NoPermission text="Serviço não encontrado ou você não tem permissão para editá-lo." />
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
   const base = Number(f.base.replace(/\D/g, ''))
   const e = { name: f.name.trim().length < 5 ? 'Informe um título claro.' : '', desc: f.desc.trim().length < 30 ? 'Descreva o serviço com ao menos 30 caracteres.' : '', base: !base ? 'Informe o preço-base.' : '', time: !f.time.trim() ? 'Informe o prazo estimado.' : '', images: !f.images.length ? 'Adicione ao menos uma imagem.' : '' }
@@ -211,8 +211,8 @@ export function ServiceForm({ mode }: { mode: 'create' | 'edit' }) {
 }
 
 export function MyPortfolio() {
-  const { go, works, setWorks, openOverlay, remove } = useApp()
-  const list = works.filter((w) => w.artistId === 'me')
+  const { go, works, setWorks, remove, openOverlay, canEditArtistContent } = useApp()
+  const list = works.filter((w) => canEditArtistContent(w.artistId))
   return (
     <>
       <PageHeading title="Meu portfólio" description="Organize os projetos que mostram seu talento." action={<Btn icon={<Plus size={17} />} onClick={() => go(29)}>Adicionar trabalho</Btn>} />
@@ -246,12 +246,12 @@ function TagInput({ value, onChange, placeholder }: { value: string[]; onChange:
 }
 
 export function WorkForm({ mode }: { mode: 'create' | 'edit' }) {
-  const { go, params, works, setWorks, upsert, remove, toast, openOverlay } = useApp()
+  const { go, params, works, setWorks, upsert, remove, toast, openOverlay, canEditArtistContent } = useApp()
   const edit = mode === 'edit'
-  const cur = edit ? works.find((w) => w.id === params.workId) ?? works.find((w) => w.artistId === 'me') : undefined
+  const cur = edit ? works.find((w) => w.id === params.workId) : undefined
   const [f, setF] = useState({ title: cur?.title ?? '', desc: cur?.desc ?? '', cat: cur?.cat ?? workCats[0], techniques: cur?.techniques ?? [] as string[], materials: cur?.materials ?? [] as string[], images: cur?.images ?? [] as string[] })
   const [tried, setTried] = useState(false)
-  if (edit && cur && cur.artistId !== 'me') return <NoPermission text="Este trabalho pertence a outro artista. Você só pode editar trabalhos do seu portfólio." />
+  if (edit && (!cur || !canEditArtistContent(cur.artistId))) return <NoPermission text="Trabalho não encontrado ou você não tem permissão para editá-lo." />
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
   const e = { title: f.title.trim().length < 3 ? 'Informe o título do trabalho.' : '', desc: f.desc.trim().length < 20 ? 'Descreva o trabalho (mín. 20 caracteres).' : '', images: !f.images.length ? 'Adicione ao menos uma imagem.' : '' }
   const save = () => {

@@ -209,7 +209,7 @@ export function useForm<T extends Record<string, any>>(init: T) {
 
 // ---------- Cards ----------
 export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => void; mine?: boolean }) {
-  const { go, favs, toggleFav } = useApp()
+  const { go, favs, toggleFav, canEditArtistContent } = useApp()
   const a = artistById(p.artistId)
   const open = onOpen ?? (() => go(13, { productId: p.id }))
   return (
@@ -217,7 +217,7 @@ export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => vo
       <div className="card-image">
         <img src={p.images[0]} alt={p.name} loading="lazy" />
         <Badge>{p.cat}</Badge>
-        {p.artistId === 'me' && <span className="mine-tag">Seu anúncio</span>}
+        {canEditArtistContent(p.artistId) && <span className="mine-tag">Seu anúncio</span>}
         <button className={`heart ${favs.includes(p.id) ? 'on' : ''}`} aria-label="Favoritar" onClick={(e) => { e.stopPropagation(); toggleFav(p.id) }}><Heart size={17} fill={favs.includes(p.id) ? 'currentColor' : 'none'} /></button>
       </div>
       <div className="card-body">
@@ -229,11 +229,11 @@ export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => vo
   )
 }
 export function ServiceCard({ s }: { s: Service }) {
-  const { go } = useApp()
+  const { go, canEditArtistContent } = useApp()
   const a = artistById(s.artistId)
   return (
     <article className="product-card service-card" onClick={() => go(14, { serviceId: s.id })}>
-      <div className="card-image short"><img src={s.images[0]} alt={s.name} loading="lazy" /><Badge>{s.cat}</Badge>{s.artistId === 'me' && <span className="mine-tag">Seu serviço</span>}</div>
+      <div className="card-image short"><img src={s.images[0]} alt={s.name} loading="lazy" /><Badge>{s.cat}</Badge>{canEditArtistContent(s.artistId) && <span className="mine-tag">Seu serviço</span>}</div>
       <div className="card-body">
         <span className="artist">{a.name}</span>
         <h3>{s.name}</h3>

@@ -3,11 +3,13 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock3, ExternalLink, Heart, M
 import { Avatar, Badge, Btn, Chips, EmptyState, EventCard, EventRow, Field, MONTHS, Notice, NoPermission, PageHeading, SearchInput, Select, TextArea, TextInput, Upload, fmtDate } from '../ui'
 import { useApp } from '../store'
 import { eventCats, ph, type EventItem } from '../data'
+import { backendMode } from '../services/config'
+import { createEvent, updateEvent, formToPayload, toEventItem } from '../services/events'
 
-const TODAY = '2025-06-10'
+const TODAY = backendMode ? new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Fortaleza' }) : '2025-06-10'
 export function CalendarView() {
   const { events, go } = useApp()
-  const [ym, setYm] = useState<[number, number]>([2025, 5])
+  const [ym, setYm] = useState<[number, number]>(() => { const [y, m] = TODAY.split('-').map(Number); return [y, m - 1] })
   const [cat, setCat] = useState('Todas'); const [sel, setSel] = useState<string | null>(TODAY)
   const [y, m] = ym
   const first = new Date(y, m, 1).getDay(); const dim = new Date(y, m + 1, 0).getDate()
@@ -21,7 +23,7 @@ export function CalendarView() {
     <>
       <PageHeading title="Calendário cosplay" description="Convenções, encontros, workshops e datas importantes da comunidade." action={<div className="btn-row"><Btn variant="secondary" onClick={() => go(46)}>Ver lista</Btn><Btn icon={<Plus size={17} />} onClick={() => go(48)}>Cadastrar evento</Btn></div>} />
       <div className="calendar-controls">
-        <div className="cal-nav"><button aria-label="Mês anterior" onClick={() => move(-1)}><ChevronLeft size={18} /></button><h2>{MONTHS[m]} {y}</h2><button aria-label="Próximo mês" onClick={() => move(1)}><ChevronRight size={18} /></button><Btn size="sm" variant="secondary" onClick={() => { setYm([2025, 5]); setSel(TODAY) }}>Hoje</Btn></div>
+        <div className="cal-nav"><button aria-label="Mês anterior" onClick={() => move(-1)}><ChevronLeft size={18} /></button><h2>{MONTHS[m]} {y}</h2><button aria-label="Próximo mês" onClick={() => move(1)}><ChevronRight size={18} /></button><Btn size="sm" variant="secondary" onClick={() => { setYm([Number(TODAY.slice(0,4)), Number(TODAY.slice(5,7))-1]); setSel(TODAY) }}>Hoje</Btn></div>
         <Chips options={['Todas', ...eventCats]} value={cat} onChange={setCat} />
       </div>
       <div className="calendar-wrap">
@@ -70,6 +72,7 @@ export function EventList() {
 export function EventDetail() {
   const { params, events, go, interested, toggleInterest, toast } = useApp()
   const e = events.find((x) => x.id === params.eventId) ?? events[0]
+  if (!e) return <EmptyState icon={<CalendarDays />} title="Evento não encontrado" text="Volte à lista para consultar os eventos disponíveis." action={<Btn onClick={() => go(46)}>Ver eventos</Btn>} />
   const on = interested.includes(e.id); const mine = e.owner === 'me'
   return (
     <>
@@ -79,7 +82,7 @@ export function EventDetail() {
         <div><div className="badge-row"><Badge tone="gold">{e.cat}</Badge>{e.status === 'Em revisão' && <Badge tone="gray">Em revisão</Badge>}</div><h1>{e.name}</h1><p><CalendarDays size={16} /> {fmtDate(e.date)} · {e.time}</p></div>
       </div>
       <div className="event-info-grid">
-        <div className="content-card"><h2>Sobre o evento</h2><p>{e.desc}</p><h3>Organização</h3><div className="organizer"><Avatar src={ph(12, 200)} size={44} /><div><strong>{e.organizer}</strong><small>Organizador</small></div></div><h3>Link externo</h3><a className="ext-link" href={e.link} target="_blank" rel="noreferrer"><ExternalLink size={15} /> {e.link.replace('https://', '')}</a><p className="muted small"><Info size={13} /> A CosMunity divulga o evento; ingressos e inscrições são tratados no site do organizador.</p></div>
+        <div className="content-card"><h2>Sobre o evento</h2><p>{e.desc}</p><h3>Organização</h3><div className="organizer"><Avatar src={ph(12, 200)} size={44} /><div><strong>{e.organizer}</strong><small>Organizador</small></div></div>{e.link && <><h3>Link externo</h3><a className="ext-link" href={e.link} target="_blank" rel="noreferrer"><ExternalLink size={15} /> {e.link.replace('https://', '')}</a></>}<p className="muted small"><Info size={13} /> A CosMunity divulga o evento; ingressos e inscrições são tratados no site do organizador.</p></div>
         <aside className="content-card side">
           <span><CalendarDays /><div><small>DATA E HORÁRIO</small><b>{fmtDate(e.date)}</b><b>{e.time}</b></div></span>
           <span><MapPin /><div><small>LOCAL</small><b>{e.place}</b></div></span>
@@ -101,9 +104,22 @@ export function EventForm({ mode }: { mode: 'create' | 'edit' }) {
   if (edit && cur && cur.owner !== 'me') return <NoPermission text="Você só pode editar eventos criados ou administrados por você." />
   const set = (k: string) => (v: any) => setF((s) => ({ ...s, [k]: v }))
   const e = { name: f.name.trim().length < 4 ? 'Informe o nome do evento.' : '', desc: f.desc.trim().length < 20 ? 'Descreva o evento (mín. 20 caracteres).' : '', date: !f.date ? 'Escolha a data.' : '', time: !f.time ? 'Informe o horário.' : '', place: f.place.trim().length < 3 ? 'Informe o local.' : '', link: f.link && !/^https?:\/\//.test(f.link) ? 'Use um link começando com http:// ou https://.' : '' }
-  const save = () => {
+  const save = async () => {
     setTried(true)
     if (Object.values(e).some(Boolean)) return toast('error', 'Revise os campos destacados')
+    if (backendMode) {
+      try {
+        const payload = formToPayload(f)
+        const saved = edit && cur ? await updateEvent(Number(cur.id), payload) : await createEvent(payload)
+        const item = toEventItem(saved, 'me')
+        upsert(setEvents, item)
+        toast('success', edit ? 'Evento atualizado' : 'Evento cadastrado', item.name)
+        go(47, { eventId: item.id })
+      } catch (error) {
+        toast('error', 'Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.')
+      }
+      return
+    }
     const item: EventItem = { id: cur?.id ?? 'e' + Date.now(), name: f.name, desc: f.desc, cat: f.cat, date: f.date, time: f.time, place: f.place, image: f.image[0] ?? ph(12, 1400), link: f.link || 'https://exemplo.com', organizer: 'Mari Atelier', owner: 'me', interested: cur?.interested ?? 0, status: edit ? cur?.status : 'Em revisão' }
     upsert(setEvents, item); toast('success', edit ? 'Evento atualizado' : 'Evento enviado para publicação', edit ? f.name : 'Ele aparecerá no calendário após a revisão da equipe.'); go(47, { eventId: item.id })
   }

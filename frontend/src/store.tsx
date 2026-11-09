@@ -3,6 +3,10 @@ import {
   artists as seedArtists, seedCommunities, seedConvs, seedEvents, seedNotifs, seedProducts, seedReviews, seedServices, seedWorks, ph,
   type Artist, type Community, type Conv, type EventItem, type Msg, type Notif, type Product, type Review, type Service, type Work,
 } from './data'
+import { backendMode } from './services/config'
+import * as authApi from './services/auth'
+import { getToken } from './services/client'
+import { listEvents, toEventItem } from './services/events'
 
 export type Params = { productId?: string; serviceId?: string; artistId?: string; workId?: string; communityId?: string; eventId?: string; convId?: string; query?: string; tab?: string }
 export type OverlayKind = 'complete' | 'rateArtist' | 'rateClient' | 'leave' | 'logout' | 'delete' | 'deactivate' | 'image' | 'filters' | 'notifications'
@@ -17,6 +21,47 @@ export const PUBLIC = new Set([0, 1, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 38, 
 export const BARE = new Set([2, 3, 4, 5, 6, 7])
 export const NOAUTH_OK = new Set([2, 3, 4, 5, 6])
 export const ARTIST_ONLY = new Set([20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
+
+// Cada mudança de tela cria uma entrada real no histórico do navegador.
+// O botão Voltar e Alt+Seta/Voltar do Chrome usam as mesmas entradas.
+type Route = { screen: number; activeId: number; params: Params }
+type NavigationEntry = { index: number; route: Route }
+const HISTORY_KEY = '__cosmunityNav'
+const PARAM_KEYS: (keyof Params)[] = ['productId', 'serviceId', 'artistId', 'workId', 'communityId', 'eventId', 'convId', 'query', 'tab']
+
+function parseRoute(): Route {
+  const search = new URLSearchParams(window.location.search)
+  const id = Number(search.get('screen')) || 1
+  const params: Params = {}
+  for (const key of PARAM_KEYS) {
+    const value = search.get(key)
+    if (value !== null) params[key] = value
+  }
+  return { screen: OVERLAY_SCREENS[id]?.screen ?? id, activeId: id, params: OVERLAY_SCREENS[id]?.params ?? params }
+}
+
+function savedNavigation(): NavigationEntry | null {
+  const state = window.history.state
+  const entry = state && typeof state === 'object' ? state[HISTORY_KEY] as NavigationEntry | undefined : undefined
+  return entry && Number.isInteger(entry.index) && entry.index >= 0 && Number.isInteger(entry.route?.screen)
+    ? entry : null
+}
+
+function routeUrl(route: Route): string {
+  const url = new URL(window.location.href)
+  url.searchParams.set('screen', String(route.activeId))
+  for (const key of PARAM_KEYS) url.searchParams.delete(key)
+  for (const key of PARAM_KEYS) {
+    const value = route.params[key]
+    if (value !== undefined) url.searchParams.set(key, value)
+  }
+  return url.pathname + url.search + url.hash
+}
+
+function historyState(entry: NavigationEntry) {
+  const oldState = window.history.state
+  return { ...(oldState && typeof oldState === 'object' ? oldState : {}), [HISTORY_KEY]: entry }
+}
 
 const OVERLAY_SCREENS: Record<number, { screen: number; kind: OverlayKind | 'newmsg' | 'success' | 'error'; params?: Params }> = {
   34: { screen: 33, kind: 'complete', params: { convId: 'cv3' } },
@@ -41,12 +86,18 @@ export const useApp = () => useContext(AppCtx)
 function useProvideApp() {
   const q = new URLSearchParams(location.search)
   const initSession = q.get('session')
-  const [loggedIn, setLoggedIn] = useState(initSession === 'user' || initSession === 'artist')
-  const [artistActive, setArtistActive] = useState(initSession === 'artist')
-  const initId = Number(q.get('screen')) || 1
-  const [screen, setScreen] = useState(OVERLAY_SCREENS[initId]?.screen ?? initId)
+  const [loggedIn, setLoggedIn] = useState(backendMode ? Boolean(getToken()) : (initSession === 'user' || initSession === 'artist'))
+  const [artistActive, setArtistActive] = useState(!backendMode && initSession === 'artist')
+  const initialNavigation = useRef<NavigationEntry>(savedNavigation() ?? { index: 0, route: parseRoute() }).current
+  const initId = initialNavigation.route.activeId
+  const [screen, setScreen] = useState(initialNavigation.route.screen)
   const [activeId, setActiveId] = useState(initId)
-  const [params, setParams] = useState<Params>(OVERLAY_SCREENS[initId]?.params ?? {})
+  const [params, setParams] = useState<Params>(initialNavigation.route.params)
+  const [canGoBack, setCanGoBack] = useState(initialNavigation.index > 0)
+  const historyIndex = useRef(initialNavigation.index)
+  const currentRoute = useRef<Route>(initialNavigation.route)
+  const loggedInRef = useRef(loggedIn)
+  loggedInRef.current = loggedIn
   const [overlay, setOverlay] = useState<Overlay>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
   const [mapOpen, setMapOpen] = useState(false)
@@ -57,7 +108,7 @@ function useProvideApp() {
   const [services, setServices] = useState<Service[]>(seedServices)
   const [works, setWorks] = useState<Work[]>(seedWorks)
   const [communities, setCommunities] = useState<Community[]>(seedCommunities)
-  const [events, setEvents] = useState<EventItem[]>(seedEvents)
+  const [events, setEvents] = useState<EventItem[]>(backendMode ? [] : seedEvents)
   const [convs, setConvs] = useState<Conv[]>(seedConvs)
   const [reviews, setReviews] = useState<Review[]>(seedReviews)
   const [notifs, setNotifs] = useState<Notif[]>(seedNotifs)
@@ -72,6 +123,10 @@ function useProvideApp() {
   const [memberRoles, setMemberRoles] = useState<Record<string, string>>({})
 
   const session: 'visitor' | 'user' | 'artist' = !loggedIn ? 'visitor' : artistActive ? 'artist' : 'user'
+  // Os dados 'me' são ilustrativos, não a identidade de qualquer visitante.
+  // No modo conectado, a propriedade de anúncios exige IDs de proprietário vindos da API.
+  const canEditArtistContent = (artistId: string) =>
+    !backendMode && loggedIn && artistActive && artistId === 'me'
   const nextRef = useRef<null | (() => void)>(null)
   const convsRef = useRef(convs)
   convsRef.current = convs
@@ -83,10 +138,61 @@ function useProvideApp() {
   }
   const dismissToast = (id: number) => setToasts((t) => t.filter((x) => x.id !== id))
 
-  const nav = (id: number, p: Params = {}) => {
-    setScreen(id); setActiveId(id); setParams(p); setOverlay(null); setMenuOpen(false); setMapOpen(false)
+  const showRoute = (route: Route) => {
+    currentRoute.current = route
+    setScreen(route.screen)
+    setActiveId(route.activeId)
+    setParams(route.params)
+    setOverlay(null)
+    setMenuOpen(false)
+    setMapOpen(false)
     window.scrollTo({ top: 0 })
   }
+
+  const nav = (id: number, p: Params = {}, selectedId = id) => {
+    const route: Route = { screen: id, activeId: selectedId, params: p }
+    const previous = currentRoute.current
+    const sameRoute = previous.screen === route.screen && previous.activeId === route.activeId &&
+      PARAM_KEYS.every((key) => previous.params[key] === route.params[key])
+    if (!sameRoute) {
+      const index = historyIndex.current + 1
+      window.history.pushState(historyState({ index, route }), '', routeUrl(route))
+      historyIndex.current = index
+      setCanGoBack(true)
+    }
+    showRoute(route)
+  }
+
+  const goBack = () => {
+    if (historyIndex.current > 0) window.history.back()
+  }
+
+  // Faz a seta do navegador e o atalho Alt + ← restaurarem também os parâmetros
+  // (por exemplo: qual produto, serviço ou comunidade estava sendo exibido).
+  useEffect(() => {
+    if (!savedNavigation()) {
+      window.history.replaceState(historyState(initialNavigation), '', window.location.href)
+    }
+    const handlePopState = (event: PopStateEvent) => {
+      const entry = event.state?.[HISTORY_KEY] as NavigationEntry | undefined
+      if (!entry || !Number.isInteger(entry.index) || !entry.route) return
+      historyIndex.current = entry.index
+      setCanGoBack(entry.index > 0)
+      const route = entry.route
+      if (!loggedInRef.current && !PUBLIC.has(route.screen) && !NOAUTH_OK.has(route.screen)) {
+        // Não reabrir telas privadas depois que a pessoa sair da conta.
+        const safeRoute: Route = { screen: 1, activeId: 1, params: {} }
+        window.history.replaceState(historyState({ index: entry.index, route: safeRoute }), '', routeUrl(safeRoute))
+        showRoute(safeRoute)
+      } else {
+        showRoute(route)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+    // Registrar o histórico somente na montagem. O estado atual fica nos refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const go = (id: number, p: Params = {}) => {
     const o = OVERLAY_SCREENS[id]
     if (o) return jump(id)
@@ -107,8 +213,7 @@ function useProvideApp() {
     const needsArtist = ARTIST_ONLY.has(target) || id === 34 || id === 36 || (id >= 58 && id <= 60) || id === 61
     const needsLogin = needsArtist || (!PUBLIC.has(target) && !NOAUTH_OK.has(target))
     if (needsArtist) { setLoggedIn(true); setArtistActive(true) } else if (needsLogin) setLoggedIn(true)
-    nav(target, o?.params ?? {})
-    setActiveId(id)
+    nav(target, o?.params ?? {}, id)
     if (!o) return
     setTimeout(() => {
       if (o.kind === 'newmsg') toast('message', 'Nina Costumes', 'Oi, Marina! Acabei de te enviar a estimativa do seu Conjunto Sakura.', { avatar: ph(4, 200), action: { label: 'Responder', run: () => nav(32, { convId: 'cv1' }) } })
@@ -127,13 +232,17 @@ function useProvideApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const login = () => {
+  const login = async (email: string, senha: string) => {
+    if (backendMode) {
+      const user = await authApi.login(email, senha)
+      setProfile((p) => ({ ...p, name: user.nome, avatar: user.fotoUrl || p.avatar }))
+    }
     setLoggedIn(true)
-    toast('success', 'Bem-vinda de volta, Marina!', 'Você entrou na sua conta.')
+    toast('success', 'Login realizado!', 'Você entrou na sua conta.')
     const n = nextRef.current; nextRef.current = null
     if (n) n(); else nav(8)
   }
-  const logout = () => { setLoggedIn(false); setArtistActive(false); nav(1); toast('info', 'Você saiu da conta', 'Até logo! Volte sempre à CosMunity.') }
+  const logout = () => { if (backendMode) authApi.logout(); setLoggedIn(false); setArtistActive(false); nav(1); toast('info', 'Você saiu da conta', 'Até logo! Volte sempre à CosMunity.') }
   const setSession = (s: 'visitor' | 'user' | 'artist') => { setLoggedIn(s !== 'visitor'); setArtistActive(s === 'artist') }
 
   // Produtos, serviços, portfólio
@@ -184,15 +293,30 @@ function useProvideApp() {
     }
   }, [loggedIn, screen])
 
+  // Modo backend: dados da conta e eventos vindos do Java, não dos arrays fictícios.
+  useEffect(() => {
+    if (!backendMode || !loggedIn) return
+    let cancelled = false
+    void authApi.currentUser().then((u) => {
+      if (!cancelled) setProfile((p) => ({ ...p, name: u.nome, avatar: u.fotoUrl || p.avatar }))
+    }).catch(() => { if (!cancelled) { authApi.logout(); setLoggedIn(false) } })
+    void listEvents().then((items) => {
+      if (!cancelled) setEvents(items.map((e) => toEventItem(e)))
+    }).catch((e: unknown) => {
+      if (!cancelled) toast('error', 'Não foi possível carregar os eventos', e instanceof Error ? e.message : undefined)
+    })
+    return () => { cancelled = true }
+  }, [loggedIn])
+
   const unreadConvs = convs.filter((c) => (artistActive || c.role === 'client') && c.unread > 0).reduce((n, c) => n + c.unread, 0)
   const unreadNotifs = notifs.filter((n) => n.unread).length
   const me = artists.find((a) => a.id === 'me')!
 
   return {
-    loggedIn, artistActive, session, setSession, setArtistActive, screen, activeId, params, overlay, toasts, mapOpen, setMapOpen, menuOpen, setMenuOpen, filters, setFilters,
+    backendMode, loggedIn, artistActive, session, canEditArtistContent, setSession, setArtistActive, screen, activeId, params, overlay, toasts, mapOpen, setMapOpen, menuOpen, setMenuOpen, filters, setFilters,
     products, setProducts, services, setServices, works, setWorks, communities, setCommunities, events, setEvents, convs, reviews, notifs, setNotifs, artists, setArtists, me,
     joined, interested, favs, cmsgs, emailOk, setEmailOk, phoneOk, setPhoneOk, profile, setProfile, memberRoles, setMemberRoles,
-    toast, dismissToast, go, jump, nav, openOverlay, closeOverlay, login, logout, upsert, remove, startChat, sendMsg, patchConv, setConvStatus, markRead, addReview,
+    toast, dismissToast, go, goBack, canGoBack, jump, nav, openOverlay, closeOverlay, login, logout, upsert, remove, startChat, sendMsg, patchConv, setConvStatus, markRead, addReview,
     joinCommunity, leaveCommunity, toggleInterest, toggleFav, sendCMsg, unreadConvs, unreadNotifs,
   }
 }

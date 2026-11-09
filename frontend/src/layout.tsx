@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Bell, CalendarDays, ChevronDown, Image as ImageIcon, LayoutDashboard, Layers, LogOut, Menu, MessageCircle, Package, Palette, Settings, ShoppingBag,
-  Smartphone, User, Users, WandSparkles, X, ArrowRight, Sparkles, Check, ExternalLink,
+  Smartphone, User, Users, WandSparkles, X, ArrowRight, ArrowLeft, Sparkles, Check, ExternalLink,
 } from 'lucide-react'
 import { Avatar, Btn, Logo, SearchInput } from './ui'
 import { useApp } from './store'
@@ -9,6 +9,18 @@ import { FLOWS, GROUPS, SCREENS } from './meta'
 import { NotificationsMenu } from './overlays'
 
 type Item = { label: string; icon: ReactNode; id?: number; ids: number[]; badge?: number; action?: () => void }
+
+export function BackNavigation() {
+  const { canGoBack, goBack } = useApp()
+  if (!canGoBack) return null
+  return (
+    <button type="button" className="history-back-btn" onClick={goBack}
+      aria-label="Voltar à tela anterior" title="Voltar à tela anterior">
+      <ArrowLeft size={17} aria-hidden="true" />
+      <span>Voltar</span>
+    </button>
+  )
+}
 
 function useNav() {
   const { unreadConvs, unreadNotifs, openOverlay, session } = useApp()
@@ -38,7 +50,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
   return (
     <div className="public">
       <header className="topbar">
-        <Logo onClick={() => go(1)} />
+        <div className="public-brand"><BackNavigation /><Logo onClick={() => go(1)} /></div>
         <nav className="desktop-nav">{nav.map(([l, id, ids]) => <button key={l} className={(ids as readonly number[]).includes(screen) ? 'active' : ''} onClick={() => go(id)}>{l}</button>)}</nav>
         <div className="header-actions">
           <Btn variant="secondary" size="sm" className="hide-sm" onClick={() => go(4)}>Entrar</Btn>
@@ -102,6 +114,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="shell-main">
         <header className="appbar">
           <button className="menu-btn" aria-label="Menu" onClick={() => setMenuOpen(!menuOpen)}><Menu /></button>
+          <BackNavigation />
           <div className="appbar-logo"><Logo onClick={() => go(8)} /></div>
           <div className="appbar-search"><SearchInput value={q} onChange={setQ} placeholder="Buscar produtos, serviços e artistas..." onEnter={() => go(12, { query: q })} /></div>
           <div className="appbar-actions">
@@ -150,7 +163,7 @@ export function MapPanel() {
     <div className="map-overlay" onMouseDown={(e) => e.target === e.currentTarget && setMapOpen(false)}>
       <div className="map-panel">
         <header>
-          <div><Logo /><p>Protótipo navegável · 63 interfaces e componentes</p></div>
+          <div><Logo /><p>Comunidade · Marketplace · Criadores</p></div>
           <div className="map-head-actions">
             <Btn size="sm" variant="secondary" icon={<Smartphone size={15} />} onClick={() => setMobile(true)}>Preview mobile</Btn>
             <button aria-label="Fechar" onClick={() => setMapOpen(false)}><X /></button>

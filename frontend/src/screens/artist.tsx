@@ -24,9 +24,9 @@ function ReviewList({ list }: { list: ReturnType<typeof useApp>['reviews'] }) {
 }
 
 export function ArtistProfile() {
-  const { params, artists: all, products, services, works, reviews, go, startChat, phoneOk } = useApp()
+  const { params, artists: all, products, services, works, reviews, go, startChat, phoneOk, canEditArtistContent } = useApp()
   const a = all.find((x) => x.id === (params.artistId ?? 'nina')) ?? all[1]
-  const mine = a.id === 'me'
+  const mine = canEditArtistContent(a.id)
   const [tab, setTab] = useState(params.tab ?? 'overview')
   const ps = products.filter((p) => p.artistId === a.id && p.status === 'Ativo')
   const ss = services.filter((s) => s.artistId === a.id && s.status === 'Ativo')
@@ -94,10 +94,10 @@ export function PortfolioFull() {
 }
 
 export function WorkDetail() {
-  const { params, works, go, products } = useApp()
+  const { params, works, go, products, canEditArtistContent } = useApp()
   const w = works.find((x) => x.id === params.workId) ?? works[0]
   const a = artistById(w.artistId)
-  const mine = w.artistId === 'me'
+  const mine = canEditArtistContent(w.artistId)
   const related = works.filter((x) => x.artistId === w.artistId && x.id !== w.id).slice(0, 3)
   return (
     <>
@@ -235,10 +235,10 @@ export function ArtistForm({ mode }: { mode: 'create' | 'edit' }) {
 }
 
 export function ReviewsPage() {
-  const { params, reviews, go, convs } = useApp()
+  const { params, reviews, go, convs, canEditArtistContent } = useApp()
   const aid = params.artistId ?? 'me'
   const a = artistById(aid)
-  const mine = aid === 'me'
+  const mine = canEditArtistContent(aid)
   const [tab, setTab] = useState(params.tab ?? 'artist')
   const base = reviews.filter((r) => !(r as any).mine)
   const list = tab === 'sent' ? reviews.filter((r) => (r as any).mine) : base.filter((r) => r.about === tab)
