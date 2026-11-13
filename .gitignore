@@ -41,3 +41,6 @@ application-local.properties
 /teste-artista.json
 /database/.env
 /src/main/resources/application-local.properties
+
+### Imagens armazenadas localmente pelo Marketplace
+/uploads/
