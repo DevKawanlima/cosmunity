@@ -41,3 +41,31 @@ application-local.properties
 /teste-artista.json
 /database/.env
 /src/main/resources/application-local.properties
+
+### Imagens armazenadas localmente pelo Marketplace
+/uploads/
+
+# Arquivos sensiveis e temporarios do CosMunity
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Respostas e dados gerados nos testes
+/resposta-login.json
+/teste-*.json
+/meus-*.json
+/produto-consulta.json
+/produtos-publicos.json
+/servico-consulta.json
+/servicos-publicos.json
+
+# Logs e relatorios locais
+/resultado-testes.log
+/revisao-testes.txt
+*.log
+
+# Arquivos enviados pelos usuarios
+/uploads/

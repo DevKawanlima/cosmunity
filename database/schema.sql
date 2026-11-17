@@ -1,4 +1,15 @@
 
+-- ==========================================
+-- COSMUNITY - POSTGRESQL 17
+-- SCHEMA COMPLETO - 19 TABELAS
+-- ==========================================
+
+BEGIN;
+
+-- ==========================================
+-- 01. USUARIO
+-- ==========================================
+
 CREATE TABLE usuario (
     id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -8,8 +19,16 @@ CREATE TABLE usuario (
     email_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMPTZ
+    atualizado_em TIMESTAMPTZ,
+    token_version BIGINT NOT NULL DEFAULT 0
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usuario_email_unico
+    ON usuario (LOWER(email));
+
+-- ==========================================
+-- 02. ARTISTA
+-- ==========================================
 
 CREATE TABLE artista (
     id_artista BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -27,10 +46,18 @@ CREATE TABLE artista (
         REFERENCES usuario(id_usuario)
 );
 
+-- ==========================================
+-- 03. ESPECIALIDADE
+-- ==========================================
+
 CREATE TABLE especialidade (
     id_especialidade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome VARCHAR(100) NOT NULL UNIQUE
 );
+
+-- ==========================================
+-- 04. ARTISTA_ESPECIALIDADE
+-- ==========================================
 
 CREATE TABLE artista_especialidade (
     id_artista BIGINT NOT NULL,
@@ -46,6 +73,10 @@ CREATE TABLE artista_especialidade (
         FOREIGN KEY (id_especialidade)
         REFERENCES especialidade(id_especialidade)
 );
+
+-- ==========================================
+-- 05. PRODUTO
+-- ==========================================
 
 CREATE TABLE produto (
     id_produto BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -66,6 +97,10 @@ CREATE TABLE produto (
         CHECK (preco >= 0)
 );
 
+-- ==========================================
+-- 06. IMAGEM_PRODUTO
+-- ==========================================
+
 CREATE TABLE imagem_produto (
     id_imagem_produto BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_produto BIGINT NOT NULL,
@@ -80,6 +115,10 @@ CREATE TABLE imagem_produto (
     CONSTRAINT ck_imagem_produto_ordem
         CHECK (ordem >= 0)
 );
+
+-- ==========================================
+-- 07. SERVICO
+-- ==========================================
 
 CREATE TABLE servico (
     id_servico BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -104,6 +143,10 @@ CREATE TABLE servico (
         CHECK (prazo_estimado_dias >= 0)
 );
 
+-- ==========================================
+-- 08. IMAGEM_SERVICO
+-- ==========================================
+
 CREATE TABLE imagem_servico (
     id_imagem_servico BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_servico BIGINT NOT NULL,
@@ -119,6 +162,10 @@ CREATE TABLE imagem_servico (
         CHECK (ordem >= 0)
 );
 
+-- ==========================================
+-- 09. TRABALHO_PORTFOLIO
+-- ==========================================
+
 CREATE TABLE trabalho_portfolio (
     id_trabalho BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_artista BIGINT NOT NULL,
@@ -130,6 +177,10 @@ CREATE TABLE trabalho_portfolio (
         FOREIGN KEY (id_artista)
         REFERENCES artista(id_artista)
 );
+
+-- ==========================================
+-- 10. IMAGEM_PORTFOLIO
+-- ==========================================
 
 CREATE TABLE imagem_portfolio (
     id_imagem_portfolio BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -145,6 +196,10 @@ CREATE TABLE imagem_portfolio (
     CONSTRAINT ck_imagem_portfolio_ordem
         CHECK (ordem >= 0)
 );
+
+-- ==========================================
+-- 11. CONVERSA
+-- ==========================================
 
 CREATE TABLE conversa (
     id_conversa BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -179,6 +234,10 @@ CREATE TABLE conversa (
         )
 );
 
+-- ==========================================
+-- 12. MENSAGEM_PRIVADA
+-- ==========================================
+
 CREATE TABLE mensagem_privada (
     id_mensagem BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_conversa BIGINT NOT NULL,
@@ -199,6 +258,10 @@ CREATE TABLE mensagem_privada (
     CONSTRAINT ck_mensagem_privada_conteudo
         CHECK (length(trim(conteudo)) > 0)
 );
+
+-- ==========================================
+-- 13. NEGOCIACAO
+-- ==========================================
 
 CREATE TABLE negociacao (
     id_negociacao BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -232,6 +295,10 @@ CREATE TABLE negociacao (
         )
 );
 
+-- ==========================================
+-- 14. AVALIACAO
+-- ==========================================
+
 CREATE TABLE avaliacao (
     id_avaliacao BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_negociacao BIGINT NOT NULL,
@@ -263,6 +330,10 @@ CREATE TABLE avaliacao (
         CHECK (id_avaliador <> id_avaliado)
 );
 
+-- ==========================================
+-- 15. COMUNIDADE
+-- ==========================================
+
 CREATE TABLE comunidade (
     id_comunidade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -276,6 +347,10 @@ CREATE TABLE comunidade (
         FOREIGN KEY (id_criador)
         REFERENCES usuario(id_usuario)
 );
+
+-- ==========================================
+-- 16. MEMBRO_COMUNIDADE
+-- ==========================================
 
 CREATE TABLE membro_comunidade (
     id_membro BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -296,8 +371,12 @@ CREATE TABLE membro_comunidade (
 );
 
 CREATE UNIQUE INDEX uq_membro_comunidade_ativo
-ON membro_comunidade (id_comunidade, id_usuario)
-WHERE ativo = TRUE;
+    ON membro_comunidade (id_comunidade, id_usuario)
+    WHERE ativo = TRUE;
+
+-- ==========================================
+-- 17. MENSAGEM_COMUNIDADE
+-- ==========================================
 
 CREATE TABLE mensagem_comunidade (
     id_mensagem_comunidade BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -319,8 +398,13 @@ CREATE TABLE mensagem_comunidade (
         CHECK (length(trim(conteudo)) > 0)
 );
 
+-- ==========================================
+-- 18. EVENTO
+-- ==========================================
+
 CREATE TABLE evento (
     id_evento BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_organizador BIGINT NOT NULL,
     titulo VARCHAR(150) NOT NULL,
     descricao TEXT,
     local_evento VARCHAR(255),
@@ -331,6 +415,90 @@ CREATE TABLE evento (
     imagem_url TEXT,
     criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_evento_organizador
+        FOREIGN KEY (id_organizador)
+        REFERENCES usuario(id_usuario),
+
     CONSTRAINT ck_evento_datas
         CHECK (data_fim >= data_inicio)
 );
+
+-- ==========================================
+-- 19. VERIFICACAO_EMAIL
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS verificacao_email (
+    id_verificacao BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    id_usuario BIGINT NOT NULL,
+    codigo_hash VARCHAR(255) NOT NULL,
+    finalidade VARCHAR(30) NOT NULL,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expira_em TIMESTAMPTZ NOT NULL,
+    tentativas INTEGER NOT NULL DEFAULT 0,
+    utilizado BOOLEAN NOT NULL DEFAULT FALSE,
+    utilizado_em TIMESTAMPTZ,
+
+    CONSTRAINT fk_verificacao_email_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuario(id_usuario)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_verificacao_finalidade
+        CHECK (
+            finalidade IN (
+                'CONFIRMACAO_EMAIL',
+                'RECUPERACAO_SENHA'
+            )
+        ),
+
+    CONSTRAINT chk_verificacao_tentativas
+        CHECK (tentativas BETWEEN 0 AND 5),
+
+    CONSTRAINT chk_verificacao_expiracao
+        CHECK (expira_em > criado_em)
+);
+
+-- ==========================================
+-- INDICES DE VERIFICACAO DE EMAIL
+-- ==========================================
+
+CREATE INDEX IF NOT EXISTS idx_verificacao_email_usuario
+    ON verificacao_email (
+        id_usuario,
+        finalidade,
+        criado_em DESC
+    );
+
+CREATE INDEX IF NOT EXISTS idx_verificacao_email_expiracao
+    ON verificacao_email (expira_em);
+
+-- ==========================================
+-- CATALOGO INICIAL DE ESPECIALIDADES
+-- ==========================================
+
+INSERT INTO especialidade (nome)
+VALUES
+    ('Costura de cosplays'),
+    ('Confecção de armaduras'),
+    ('Estilização de perucas'),
+    ('Maquiagem artística'),
+    ('Impressão 3D'),
+    ('Modelagem 3D'),
+    ('Fabricação de acessórios'),
+    ('Pintura artística'),
+    ('Confecção de props'),
+    ('Fotografia cosplay'),
+    ('Edição de imagens'),
+    ('Confecção de máscaras'),
+    ('Bordado'),
+    ('Caracterização de personagens'),
+    ('Eletrônica aplicada ao cosplay')
+ON CONFLICT (nome) DO NOTHING;
+
+COMMIT;
+
+-- ==========================================
+-- FIM DO SCHEMA COSMUNITY
+-- TOTAL: 19 TABELAS
+-- CATALOGO: 15 ESPECIALIDADES INICIAIS
+-- ==========================================

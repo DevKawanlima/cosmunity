@@ -2,8 +2,10 @@
 package com.cosmunity.cosmunity_backend.dto;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public record ArtistResponse(
+
         Long id,
         Long idUsuario,
         String nomeArtistico,
@@ -12,6 +14,10 @@ public record ArtistResponse(
         String telefone,
         Boolean telefoneConfirmado,
         Boolean ativo,
-        OffsetDateTime ativadoEm
+        OffsetDateTime ativadoEm,
+        Boolean emailConfirmado,
+        String fotoPerfilUrl,
+        List<SpecialtyResponse> especialidades
+
 ) {
 }

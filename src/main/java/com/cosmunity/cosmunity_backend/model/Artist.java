@@ -2,7 +2,10 @@
 package com.cosmunity.cosmunity_backend.model;
 
 import jakarta.persistence.*;
+
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "artista")
@@ -14,7 +17,11 @@ public class Artist {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false, unique = true)
+    @JoinColumn(
+            name = "id_usuario",
+            nullable = false,
+            unique = true
+    )
     private User usuario;
 
     @Column(name = "nome_artistico", length = 150)
@@ -32,11 +39,27 @@ public class Artist {
     @Column(name = "telefone_confirmado", nullable = false)
     private Boolean telefoneConfirmado = false;
 
-    @Column(name = "ativo", nullable = false)
+    @Column(nullable = false)
     private Boolean ativo = false;
 
     @Column(name = "ativado_em")
     private OffsetDateTime ativadoEm;
+
+    // ==========================================
+    // RELACIONAMENTO COM ESPECIALIDADES
+    // ==========================================
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "artista_especialidade",
+            joinColumns = @JoinColumn(
+                    name = "id_artista"
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "id_especialidade"
+            )
+    )
+    private Set<Specialty> especialidades = new HashSet<>();
 
     public Artist() {
     }
@@ -107,5 +130,36 @@ public class Artist {
 
     public void setAtivadoEm(OffsetDateTime ativadoEm) {
         this.ativadoEm = ativadoEm;
+    }
+
+    // ==========================================
+    // GERENCIAMENTO DE ESPECIALIDADES
+    // ==========================================
+
+    public Set<Specialty> getEspecialidades() {
+        return especialidades;
+    }
+
+    public void setEspecialidades(
+            Set<Specialty> especialidades
+    ) {
+        Set<Specialty> novasEspecialidades =
+                new HashSet<>(especialidades);
+
+        this.especialidades.clear();
+
+        this.especialidades.addAll(novasEspecialidades);
+    }
+
+    public void adicionarEspecialidade(
+            Specialty especialidade
+    ) {
+        this.especialidades.add(especialidade);
+    }
+
+    public void removerEspecialidade(
+            Specialty especialidade
+    ) {
+        this.especialidades.remove(especialidade);
     }
 }

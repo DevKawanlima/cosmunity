@@ -37,6 +37,9 @@ public class User {
     @Column(name = "atualizado_em")
     private OffsetDateTime atualizadoEm;
 
+    @Column(name = "token_version", nullable = false)
+    private Long tokenVersion = 0L;
+
     public User() {
     }
 
@@ -98,6 +101,14 @@ public class User {
 
     public OffsetDateTime getAtualizadoEm() {
         return atualizadoEm;
+    }
+
+    public Long getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void invalidarTokens() {
+        this.tokenVersion++;
     }
 
     @PrePersist
