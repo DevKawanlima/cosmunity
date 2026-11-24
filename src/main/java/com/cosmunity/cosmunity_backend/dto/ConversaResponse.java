@@ -16,7 +16,9 @@ public record ConversaResponse(
         OffsetDateTime criadaEm,
         OffsetDateTime atualizadaEm,
         String ultimaMensagem,
-        long naoLidas
+        long naoLidas,
+        String fotoUsuarioUrl,
+        String fotoArtistaUrl
 
 ) {
 }

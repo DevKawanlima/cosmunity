@@ -209,8 +209,8 @@ export function useForm<T extends Record<string, any>>(init: T) {
 
 // ---------- Cards ----------
 export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => void; mine?: boolean }) {
-  const { go, favs, toggleFav, canEditArtistContent } = useApp()
-  const a = artistById(p.artistId)
+  const { go, favs, toggleFav, canEditArtistContent, artists, backendMode } = useApp()
+  const a = artists.find((item) => item.id === p.artistId) ?? (!backendMode ? artistById(p.artistId) : undefined)
   const open = onOpen ?? (() => go(13, { productId: p.id }))
   return (
     <article className="product-card" onClick={open}>
@@ -221,7 +221,7 @@ export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => vo
         <button className={`heart ${favs.includes(p.id) ? 'on' : ''}`} aria-label="Favoritar" onClick={(e) => { e.stopPropagation(); toggleFav(p.id) }}><Heart size={17} fill={favs.includes(p.id) ? 'currentColor' : 'none'} /></button>
       </div>
       <div className="card-body">
-        <span className="artist">{a.name}</span>
+        <span className="artist">{a?.name ?? 'Artista não disponível'}</span>
         <h3>{p.name}</h3>
         <div className="price-row"><strong>{brl(p.price)}</strong><span>Ver detalhes <ArrowRight size={14} /></span></div>
       </div>
@@ -229,13 +229,13 @@ export function ProductCard({ p, onOpen, mine }: { p: Product; onOpen?: () => vo
   )
 }
 export function ServiceCard({ s }: { s: Service }) {
-  const { go, canEditArtistContent } = useApp()
-  const a = artistById(s.artistId)
+  const { go, canEditArtistContent, artists, backendMode } = useApp()
+  const a = artists.find((item) => item.id === s.artistId) ?? (!backendMode ? artistById(s.artistId) : undefined)
   return (
     <article className="product-card service-card" onClick={() => go(14, { serviceId: s.id })}>
       <div className="card-image short"><img src={s.images[0]} alt={s.name} loading="lazy" /><Badge>{s.cat}</Badge>{canEditArtistContent(s.artistId) && <span className="mine-tag">Seu serviço</span>}</div>
       <div className="card-body">
-        <span className="artist">{a.name}</span>
+        <span className="artist">{a?.name ?? 'Artista não disponível'}</span>
         <h3>{s.name}</h3>
         <div className="service-meta"><span><Clock3 size={13} />{s.time}</span></div>
         <div className="price-row"><strong>{s.base ? `a partir de ${brl(s.base)}` : 'sob orçamento'}</strong><span>Detalhes <ArrowRight size={14} /></span></div>
@@ -244,15 +244,16 @@ export function ServiceCard({ s }: { s: Service }) {
   )
 }
 export function ArtistCard({ id }: { id: string }) {
-  const { go } = useApp()
-  const a = artistById(id)
+  const { go, artists, backendMode } = useApp()
+  const a = artists.find((item) => item.id === id) ?? (!backendMode ? artistById(id) : undefined)
+  if (!a) return null
   return (
     <article className="artist-card" onClick={() => go(15, { artistId: a.id })}>
       <div className="ac-cover"><img src={a.cover} alt="" loading="lazy" /></div>
       <Avatar src={a.avatar} size={64} ring />
       <h3>{a.name}</h3>
       <span>{a.specialties.slice(0, 2).join(' · ')}</span>
-      <div className="ac-meta"><Star size={13} fill="currentColor" /> {a.rating.toFixed(1)} <small>({a.reviews})</small></div>
+      {(!backendMode || a.reviews > 0) && <div className="ac-meta"><Star size={13} fill="currentColor" /> {a.rating.toFixed(1)} <small>({a.reviews})</small></div>}
     </article>
   )
 }

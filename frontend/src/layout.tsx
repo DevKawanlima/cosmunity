@@ -6,7 +6,7 @@ import {
 import { Avatar, Btn, Logo, SearchInput } from './ui'
 import { useApp } from './store'
 import { FLOWS, GROUPS, SCREENS } from './meta'
-import { NotificationsMenu } from './overlays'
+import { NotificationsMenu, NotificationDot, NotificationSideBadge } from './notifications/NotificationsMenu'
 
 type Item = { label: string; icon: ReactNode; id?: number; ids: number[]; badge?: number; action?: () => void }
 
@@ -86,7 +86,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const active = (it: Item) => it.ids.includes(screen) && !(screen === 15 && params.artistId !== 'me' && it.label === 'Meu perfil')
   const click = (it: Item) => (it.action ? it.action() : go(it.id!))
   const Row = (it: Item) => (
-    <button key={it.label} className={active(it) ? 'active' : ''} onClick={() => click(it)}>{it.icon}{it.label}{!!it.badge && <b>{it.badge}</b>}</button>
+    <button key={it.label} className={active(it) ? 'active' : ''} onClick={() => click(it)}>{it.icon}{it.label}{it.label === 'Notificações' ? <NotificationSideBadge /> : !!it.badge && <b>{it.badge}</b>}</button>
   )
   const bottom = [user[0], user[1], user[2], user[4], user[6]]
   return (
@@ -150,7 +150,7 @@ export function Shell({ children }: { children: ReactNode }) {
     </div>
   )
 }
-function NotifDot() { const { unreadNotifs } = useApp(); return unreadNotifs > 0 ? <i /> : null }
+function NotifDot() { return <NotificationDot /> }
 
 // -------- Mapa do protótipo ---------
 export function MapPanel() {

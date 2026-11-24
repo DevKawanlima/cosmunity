@@ -1,11 +1,12 @@
+import { RealCommunitiesPage, RealCommunityDetail, RealCommunityChat, RealCommunityForm, RealParticipants } from './community-real'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, Crown, Info, LogOut, MessageCircle, MoreHorizontal, Pencil, Plus, Send, Shield, ShieldCheck, Users, X, Flag, UserMinus, ChevronRight } from 'lucide-react'
 import { Avatar, Badge, Btn, Chips, CommunityCard, EmptyState, Field, Notice, NoPermission, PageHeading, SearchInput, Select, SectionTitle, TextArea, TextInput, Upload, Segmented } from '../ui'
 import { useApp } from '../store'
 import { communityCats, members as seedMembers, ph, type Community, type Member } from '../data'
-import { timeNow } from '../lib'
+import { backendMode } from '../services/config'
 
-export function CommunitiesPage() {
+function DemoCommunitiesPage() {
   const { communities, joined, go } = useApp()
   const [q, setQ] = useState(''); const [cat, setCat] = useState('Todas')
   const list = communities.filter((c) => (cat === 'Todas' || c.cat === cat) && (c.name + c.desc).toLowerCase().includes(q.toLowerCase()))
@@ -34,7 +35,7 @@ export function roleOf(c: Community, m: Member, overrides: Record<string, string
   return m.role
 }
 
-export function CommunityDetail() {
+function DemoCommunityDetail() {
   const c = useCommunity()
   const { go, joined, joinCommunity, openOverlay, memberRoles, events } = useApp()
   const isIn = joined.includes(c.id); const owner = c.owner === 'me'
@@ -74,7 +75,7 @@ const seedCMsgs = (c: Community) => [
   { id: 'x3', author: 'Carol Nunes', avatar: ph(2, 200), text: 'Funciona, só precisa de mais paciência e uma base de silicone para apoiar.', time: '09:41', mine: false },
   { id: 'x4', author: 'Rafael Lima', avatar: ph(11, 200), text: 'Vou postar fotos do meu processo hoje à noite!', time: '10:05', mine: false },
 ]
-export function CommunityChat() {
+function DemoCommunityChat() {
   const c = useCommunity()
   const { go, joined, joinCommunity, cmsgs, sendCMsg, memberRoles, openOverlay } = useApp()
   const [text, setText] = useState(''); const end = useRef<HTMLDivElement>(null)
@@ -113,7 +114,7 @@ export function CommunityChat() {
   )
 }
 
-export function CommunityForm({ mode }: { mode: 'create' | 'edit' }) {
+function DemoCommunityForm({ mode }: { mode: 'create' | 'edit' }) {
   const { go, communities, setCommunities, upsert, toast, params, joinCommunity } = useApp()
   const edit = mode === 'edit'
   const cur = edit ? communities.find((c) => c.id === params.communityId) ?? communities.find((c) => c.owner === 'me') : undefined
@@ -153,7 +154,7 @@ export function CommunityForm({ mode }: { mode: 'create' | 'edit' }) {
   )
 }
 
-export function Participants() {
+function DemoParticipants() {
   const c = useCommunity()
   const { go, memberRoles, setMemberRoles, toast } = useApp()
   const [q, setQ] = useState(''); const [role, setRole] = useState('all'); const [open, setOpen] = useState<string | null>(null); const [removed, setRemoved] = useState<string[]>([])
@@ -191,5 +192,34 @@ export function Participants() {
       </div>
     </>
   )
+}
+
+// ============================================================
+// MODO BACKEND: SEM DADOS DE COMUNIDADES INVENTADOS
+// ============================================================
+// O backend ainda não disponibiliza CRUD de comunidades,
+// membros ou mensagens. Não criar registros apenas em memória
+// como se fossem persistidos. O protótipo segue disponível
+// quando VITE_API_MODE não é "backend".
+export function CommunitiesPage() {
+  if (!backendMode) return <DemoCommunitiesPage />
+  return <RealCommunitiesPage />
+}
+
+export function CommunityDetail() {
+  if (!backendMode) return <DemoCommunityDetail />
+  return <RealCommunityDetail />
+}
+export function CommunityChat() {
+  if (!backendMode) return <DemoCommunityChat />
+  return <RealCommunityChat />
+}
+export function CommunityForm({ mode }: { mode: 'create' | 'edit' }) {
+  if (!backendMode) return <DemoCommunityForm mode={mode} />
+  return <RealCommunityForm mode={mode} />
+}
+export function Participants() {
+  if (!backendMode) return <DemoParticipants />
+  return <RealParticipants />
 }
 export { ArrowRight, Check }

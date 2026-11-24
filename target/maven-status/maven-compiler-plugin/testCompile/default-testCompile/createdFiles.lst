@@ -1,0 +1,15 @@
+com/cosmunity/cosmunity_backend/service/NegociacaoServiceTest.class
+com/cosmunity/cosmunity_backend/service/AvaliacaoServiceTest.class
+com/cosmunity/cosmunity_backend/service/ConversaServiceTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/ImageStorageTransactionSupportTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/ServiceListingOwnershipTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/LocalImageStorageServiceTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/MarketplaceAccessServiceTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/ProductServiceOwnershipTest.class
+com/cosmunity/cosmunity_backend/marketplace/validation/ImageUploadValidatorTest.class
+com/cosmunity/cosmunity_backend/marketplace/dto/MarketplaceRequestValidationTest.class
+com/cosmunity/cosmunity_backend/marketplace/service/MarketplacePageSupportTest.class
+com/cosmunity/cosmunity_backend/CosmunityBackendApplicationTests.class
+com/cosmunity/cosmunity_backend/model/ConversaModelTest.class
+com/cosmunity/cosmunity_backend/service/ArquivoPortfolioServiceTest.class
+com/cosmunity/cosmunity_backend/service/PortfolioServiceTest.class

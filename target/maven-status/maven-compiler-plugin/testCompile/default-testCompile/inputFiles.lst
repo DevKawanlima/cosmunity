@@ -1,0 +1,15 @@
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/CosmunityBackendApplicationTests.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/dto/MarketplaceRequestValidationTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/ImageStorageTransactionSupportTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/LocalImageStorageServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/MarketplaceAccessServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/MarketplacePageSupportTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/ProductServiceOwnershipTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/service/ServiceListingOwnershipTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/marketplace/validation/ImageUploadValidatorTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/model/ConversaModelTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/service/ArquivoPortfolioServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/service/AvaliacaoServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/service/ConversaServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/service/NegociacaoServiceTest.java
+/home/drarkuss/projetos/cosmunity-main/src/test/java/com/cosmunity/cosmunity_backend/service/PortfolioServiceTest.java

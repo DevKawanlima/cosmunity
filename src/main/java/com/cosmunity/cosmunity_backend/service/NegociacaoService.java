@@ -72,6 +72,7 @@ public class NegociacaoService {
         );
 
         validarParticipacao(conversa, usuario);
+        validarArtistaResponsavel(conversa, usuario);
 
         validarDisponibilidade(conversa);
 
@@ -173,6 +174,7 @@ public class NegociacaoService {
         );
 
         validarParticipacao(conversa, usuario);
+        validarArtistaResponsavel(conversa, usuario);
 
         Negociacao negociacao = negociacaoRepository
                 .buscarParaAtualizacao(conversaId)
@@ -283,6 +285,17 @@ public class NegociacaoService {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Somente os participantes podem modificar esta negociação."
+            );
+        }
+    }
+
+    // Apenas o dono do perfil artistico deste anuncio controla o andamento.
+    // O comprador continua autorizado a consultar a negociacao e avaliar ao concluir.
+    private void validarArtistaResponsavel(Conversa conversa, User usuario) {
+        if (!conversa.getUsuarioDoArtista().getId().equals(usuario.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Somente o artista responsavel pode iniciar ou atualizar a negociacao."
             );
         }
     }

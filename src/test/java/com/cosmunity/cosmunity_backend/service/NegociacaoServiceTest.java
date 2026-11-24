@@ -39,14 +39,22 @@ import org.springframework.web.server.ResponseStatusException;
 class NegociacaoServiceTest {
 
     private static final String EMAIL =
-            "cliente@exemplo.com";
+            "artista@exemplo.com";
 
-    @Mock NegociacaoRepository negociacoes;
-    @Mock ConversaService conversaService;
-    @Mock UsuarioAutenticadoProvider autenticado;
-    @Mock EntityManager entityManager;
+    @Mock
+    NegociacaoRepository negociacoes;
 
-    @InjectMocks NegociacaoService service;
+    @Mock
+    ConversaService conversaService;
+
+    @Mock
+    UsuarioAutenticadoProvider autenticado;
+
+    @Mock
+    EntityManager entityManager;
+
+    @InjectMocks
+    NegociacaoService service;
 
     private User usuario;
     private Conversa conversa;
@@ -54,28 +62,36 @@ class NegociacaoServiceTest {
     @BeforeEach
     void preparar() {
 
-        usuario = usuarioAtivo(1L);
+        // Usuario autenticado: artista responsavel.
+        usuario = usuarioAtivo(2L);
+
+        // Comprador: participante diferente.
+        User comprador = usuarioAtivo(1L);
 
         Artist artista = new Artist();
-
-        artista.setUsuario(usuarioAtivo(2L));
+        artista.setUsuario(usuario);
         artista.setAtivo(true);
 
-        ReflectionTestUtils.setField(artista, "id", 3L);
+        ReflectionTestUtils.setField(
+                artista, "id", 3L
+        );
 
         conversa = new Conversa();
-
-        conversa.setUsuario(usuario);
+        conversa.setUsuario(comprador);
         conversa.setArtista(artista);
         conversa.setIdProduto(7L);
 
-        ReflectionTestUtils.setField(conversa, "id", 10L);
+        ReflectionTestUtils.setField(
+                conversa, "id", 10L
+        );
 
-        when(autenticado.obter(EMAIL))
+        lenient().when(autenticado.obter(EMAIL))
                 .thenReturn(usuario);
     }
 
+    // ==========================================
     // CRIACAO DE NEGOCIACOES
+    // ==========================================
 
     @Test
     void participanteCriaNegociacaoEmAndamento() {
@@ -98,7 +114,8 @@ class NegociacaoServiceTest {
         ArgumentCaptor<Negociacao> captor =
                 ArgumentCaptor.forClass(Negociacao.class);
 
-        verify(negociacoes).saveAndFlush(captor.capture());
+        verify(negociacoes)
+                .saveAndFlush(captor.capture());
 
         assertEquals(
                 StatusNegociacao.EM_ANDAMENTO,
@@ -110,7 +127,11 @@ class NegociacaoServiceTest {
                 captor.getValue().getValorCombinado()
         );
 
-        assertEquals("em_andamento", resposta.status());
+        assertEquals(
+                "em_andamento",
+                resposta.status()
+        );
+
         assertEquals(10L, resposta.conversaId());
     }
 
@@ -123,12 +144,15 @@ class NegociacaoServiceTest {
 
         simularPersistencia();
 
-        NegociacaoResponse resposta = service.criar(
-                10L, null, EMAIL
-        );
+        NegociacaoResponse resposta =
+                service.criar(10L, null, EMAIL);
 
         assertNull(resposta.valorCombinado());
-        assertEquals("em_andamento", resposta.status());
+
+        assertEquals(
+                "em_andamento",
+                resposta.status()
+        );
     }
 
     @Test
@@ -149,7 +173,8 @@ class NegociacaoServiceTest {
                 )
         );
 
-        verify(negociacoes, never()).saveAndFlush(any());
+        verify(negociacoes, never())
+                .saveAndFlush(any());
     }
 
     @Test
@@ -164,13 +189,18 @@ class NegociacaoServiceTest {
 
         assertStatus(
                 HttpStatus.CONFLICT,
-                () -> service.criar(10L, null, EMAIL)
+                () -> service.criar(
+                        10L, null, EMAIL
+                )
         );
 
-        verify(negociacoes, never()).saveAndFlush(any());
+        verify(negociacoes, never())
+                .saveAndFlush(any());
     }
 
+    // ==========================================
     // PERMISSOES
+    // ==========================================
 
     @Test
     void naoParticipanteNaoCriaNegociacao() {
@@ -180,16 +210,19 @@ class NegociacaoServiceTest {
         )).thenThrow(
                 new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
-                        "Não participa."
+                        "Nao participa."
                 )
         );
 
         assertStatus(
                 HttpStatus.FORBIDDEN,
-                () -> service.criar(10L, null, EMAIL)
+                () -> service.criar(
+                        10L, null, EMAIL
+                )
         );
 
-        verify(negociacoes, never()).saveAndFlush(any());
+        verify(negociacoes, never())
+                .saveAndFlush(any());
     }
 
     @Test
@@ -200,7 +233,7 @@ class NegociacaoServiceTest {
         )).thenThrow(
                 new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
-                        "Não participa."
+                        "Nao participa."
                 )
         );
 
@@ -230,7 +263,9 @@ class NegociacaoServiceTest {
         );
     }
 
+    // ==========================================
     // ATUALIZACAO DE NEGOCIACOES
+    // ==========================================
 
     @Test
     void atualizaApenasOValorMantendoEmAndamento() {
@@ -261,7 +296,11 @@ class NegociacaoServiceTest {
                 resposta.valorCombinado()
         );
 
-        assertEquals("em_andamento", resposta.status());
+        assertEquals(
+                "em_andamento",
+                resposta.status()
+        );
+
         assertNull(resposta.concluidaEm());
         assertNotNull(resposta.atualizadaEm());
     }
@@ -317,7 +356,10 @@ class NegociacaoServiceTest {
                 EMAIL
         );
 
-        assertEquals("concluida", resposta.status());
+        assertEquals(
+                "concluida",
+                resposta.status()
+        );
 
         assertEquals(
                 new BigDecimal("200.00"),
@@ -353,7 +395,11 @@ class NegociacaoServiceTest {
                 EMAIL
         );
 
-        assertEquals("concluida", resposta.status());
+        assertEquals(
+                "concluida",
+                resposta.status()
+        );
+
         assertNotNull(resposta.concluidaEm());
     }
 
@@ -381,18 +427,25 @@ class NegociacaoServiceTest {
                 EMAIL
         );
 
-        assertEquals("cancelada", resposta.status());
+        assertEquals(
+                "cancelada",
+                resposta.status()
+        );
+
         assertNull(resposta.concluidaEm());
     }
 
     @Test
     void negociacaoEncerradaNaoPodeSerAlterada() {
 
-        Negociacao concluida = negociacaoEmAndamento(
-                new BigDecimal("90.00")
-        );
+        Negociacao concluida =
+                negociacaoEmAndamento(
+                        new BigDecimal("90.00")
+                );
 
-        concluida.setStatus(StatusNegociacao.CONCLUIDA);
+        concluida.setStatus(
+                StatusNegociacao.CONCLUIDA
+        );
 
         when(conversaService.buscarComoParticipante(
                 10L, usuario
@@ -470,7 +523,9 @@ class NegociacaoServiceTest {
         );
     }
 
+    // ==========================================
     // METODOS AUXILIARES
+    // ==========================================
 
     private void simularPersistencia() {
 
@@ -478,14 +533,18 @@ class NegociacaoServiceTest {
                 negociacoes.saveAndFlush(
                         any(Negociacao.class)
                 )
-        ).thenAnswer(inv -> inv.getArgument(0));
+        ).thenAnswer(
+                inv -> inv.getArgument(0)
+        );
     }
 
     private static User usuarioAtivo(Long id) {
 
         User usuario = new User();
 
-        ReflectionTestUtils.setField(usuario, "id", id);
+        ReflectionTestUtils.setField(
+                usuario, "id", id
+        );
 
         usuario.setAtivo(true);
         usuario.setEmailConfirmado(true);
@@ -497,10 +556,15 @@ class NegociacaoServiceTest {
             BigDecimal valor
     ) {
 
-        Negociacao negociacao = new Negociacao();
+        Negociacao negociacao =
+                new Negociacao();
 
         negociacao.setConversa(conversa);
-        negociacao.setStatus(StatusNegociacao.EM_ANDAMENTO);
+
+        negociacao.setStatus(
+                StatusNegociacao.EM_ANDAMENTO
+        );
+
         negociacao.setValorCombinado(valor);
 
         ReflectionTestUtils.setField(
@@ -520,6 +584,9 @@ class NegociacaoServiceTest {
                 acao
         );
 
-        assertEquals(esperado, erro.getStatusCode());
+        assertEquals(
+                esperado,
+                erro.getStatusCode()
+        );
     }
 }

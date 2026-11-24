@@ -4,6 +4,7 @@ import { Avatar, Btn, Chips, Field, Modal, Segmented, StarsInput, TextArea, Chec
 import { useApp, defaultFilters, type Filters } from './store'
 import { filterProducts } from './lib'
 import { productCats } from './data'
+import { backendMode } from './services/config'
 
 const notifIcon = { message: <MessageCircle size={18} />, review: <Star size={18} />, invite: <UserPlus size={18} />, update: <Info size={18} /> }
 
@@ -17,13 +18,13 @@ export function NotificationsMenu() {
       <div className="notification-menu" role="menu">
         <header>
           <h3>Notificações</h3>
-          <button onClick={() => { setNotifs((l) => l.map((n) => ({ ...n, unread: false }))); toast('success', 'Tudo em dia', 'Notificações marcadas como lidas.') }}>Marcar todas como lidas</button>
+          {!backendMode && <button onClick={() => { setNotifs((l) => l.map((n) => ({ ...n, unread: false }))); toast('success', 'Tudo em dia', 'Notificações marcadas como lidas.') }}>Marcar todas como lidas</button>}
         </header>
         <div className="nm-tabs">
           {[['all', 'Todas'], ['message', 'Mensagens'], ['review', 'Avaliações'], ['invite', 'Convites'], ['update', 'Atualizações']].map(([v, l]) => <button key={v} className={tab === v ? 'active' : ''} onClick={() => setTab(v)}>{l}</button>)}
         </div>
         <div className="nm-list">
-          {list.length === 0 && <p className="nm-empty">Nenhuma notificação por aqui.</p>}
+          {list.length === 0 && <p className="nm-empty">{backendMode ? 'Notificações automáticas ainda não estão integradas ao servidor.' : 'Nenhuma notificação por aqui.'}</p>}
           {list.map((n) => (
             <div key={n.id} className={`nm-item ${n.unread ? 'unread' : ''}`} onClick={() => { setNotifs((l) => l.map((x) => (x.id === n.id ? { ...x, unread: false } : x))); go(n.go[0], n.go[1] ?? {}) }}>
               <span className={`nm-icon ${n.type}`}>{notifIcon[n.type]}</span>
@@ -31,7 +32,7 @@ export function NotificationsMenu() {
                 <strong>{n.title}</strong>
                 <p>{n.text}</p>
                 <small>{n.time}</small>
-                {n.type === 'invite' && (
+                {!backendMode && n.type === 'invite' && (
                   <div className="nm-actions" onClick={(e) => e.stopPropagation()}>
                     <Btn size="sm" onClick={() => { setNotifs((l) => l.filter((x) => x.id !== n.id)); toast('success', 'Convite aceito', 'Você agora faz parte da comunidade.') }}>Aceitar</Btn>
                     <Btn size="sm" variant="secondary" onClick={() => setNotifs((l) => l.filter((x) => x.id !== n.id))}>Recusar</Btn>
@@ -162,6 +163,8 @@ export function OverlayHost() {
   if (k === 'image') return <ImageViewer key={String(overlay.data?.index) + 'iv'} />
   if (k === 'filters') return <FilterDrawer />
   if (k === 'notifications') return null
+  // Bloqueia modais demonstrativos sem persistência no servidor.
+  if (backendMode && ['complete', 'rateArtist', 'rateClient', 'leave'].includes(k)) return null
   const conv = convs.find((c) => c.id === (overlay.data?.convId ?? params.convId)) ?? convs[2]
   return (
     <Modal open onClose={closeOverlay}>
@@ -179,12 +182,12 @@ export function OverlayHost() {
         </Confirm>) })()}
       {k === 'logout' && <Confirm icon={<LogOut />} tone="primary" title="Deseja sair da conta?" confirm="Sair" onConfirm={() => { closeOverlay(); logout() }}><p>Você precisará fazer login novamente para acessar suas conversas, comunidades e anúncios.</p></Confirm>}
       {k === 'delete' && (
-        <Confirm icon={<Trash2 />} tone="danger" danger title={`Excluir ${overlay.data?.kind ?? 'item'}?`} confirm="Excluir definitivamente" onConfirm={() => { overlay.data?.onConfirm?.(); closeOverlay(); toast('success', `${(overlay.data?.kind ?? 'Item')[0].toUpperCase()}${(overlay.data?.kind ?? 'item').slice(1)} excluído`, 'A ação foi concluída e não pode ser desfeita.') }}>
-          <p><b>“{overlay.data?.name}”</b> será removido permanentemente da CosMunity, incluindo suas imagens. Conversas já iniciadas continuam disponíveis.</p>
+        <Confirm icon={<Trash2 />} tone="danger" danger title={`Excluir ${overlay.data?.kind ?? 'item'}?`} confirm={backendMode ? "Confirmar operação" : "Excluir definitivamente"} onConfirm={() => { overlay.data?.onConfirm?.(); closeOverlay(); if (!backendMode) toast('success', `${(overlay.data?.kind ?? 'Item')[0].toUpperCase()}${(overlay.data?.kind ?? 'item').slice(1)} excluído`, 'A ação foi concluída e não pode ser desfeita.') }}>
+          <p>{backendMode ? <>Você está solicitando a remoção de <b>“{overlay.data?.name}”</b>. A operação real depende da API; alguns anúncios podem ser apenas desativados. O resultado será informado após a resposta do servidor.</> : <><b>“{overlay.data?.name}”</b> será removido permanentemente da demonstração, incluindo suas imagens.</>}</p>
         </Confirm>
       )}
       {k === 'deactivate' && (
-        <Confirm icon={overlay.data?.active ? <EyeOff /> : <Eye />} tone={overlay.data?.active ? 'gold' : 'success'} title={overlay.data?.active ? 'Desativar anúncio?' : 'Reativar anúncio?'} confirm={overlay.data?.active ? 'Desativar anúncio' : 'Reativar anúncio'} onConfirm={() => { overlay.data?.onConfirm?.(); closeOverlay(); toast('success', overlay.data?.active ? 'Anúncio desativado' : 'Anúncio reativado', overlay.data?.name) }}>
+        <Confirm icon={overlay.data?.active ? <EyeOff /> : <Eye />} tone={overlay.data?.active ? 'gold' : 'success'} title={overlay.data?.active ? 'Desativar anúncio?' : 'Reativar anúncio?'} confirm={overlay.data?.active ? 'Desativar anúncio' : 'Reativar anúncio'} onConfirm={() => { overlay.data?.onConfirm?.(); closeOverlay(); if (!backendMode) toast('success', overlay.data?.active ? 'Anúncio desativado' : 'Anúncio reativado', overlay.data?.name) }}>
           {overlay.data?.active
             ? <p><b>“{overlay.data?.name}”</b> deixará de aparecer publicamente em buscas, no marketplace e no seu perfil. Você poderá reativá-lo a qualquer momento.</p>
             : <p><b>“{overlay.data?.name}”</b> voltará a aparecer publicamente para a comunidade.</p>}

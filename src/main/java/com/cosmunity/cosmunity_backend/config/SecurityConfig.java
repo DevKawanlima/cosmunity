@@ -47,7 +47,7 @@ public class SecurityConfig {
     }
 
     // ==========================================
-    // CONFIGURACAO DE SEGURANCA
+    // SEGURANCA DA API
     // ==========================================
 
     @Bean
@@ -55,19 +55,18 @@ public class SecurityConfig {
             HttpSecurity http
     ) throws Exception {
 
-        RateLimitFilter rateLimitFilter =
-                new RateLimitFilter();
+        RateLimitFilter rateLimitFilter = new RateLimitFilter();
 
         http
-                // API REST usando JWT
+                // API REST com JWT
                 .csrf(csrf -> csrf.disable())
 
-                // Configuracao CORS
+                // Habilita CORS
                 .cors(cors -> cors.configurationSource(
                         corsConfigurationSource()
                 ))
 
-                // Nao utilizar sessoes HTTP
+                // Nao utiliza sessoes no servidor
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
@@ -76,7 +75,7 @@ public class SecurityConfig {
 
                 // ==================================
                 // REGRAS DE ACESSO
-                // ==================================
+                // ==========================================
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -85,9 +84,9 @@ public class SecurityConfig {
                                 DispatcherType.ERROR
                         ).permitAll()
 
-                        // ----------------------------------
+                        // ==================================
                         // AUTENTICACAO PUBLICA
-                        // ----------------------------------
+                        // ==========================================
 
                         .requestMatchers(
                                 HttpMethod.POST,
@@ -99,21 +98,19 @@ public class SecurityConfig {
                                 "/auth/reset-password"
                         ).permitAll()
 
-                        // ----------------------------------
+                        // ==================================
                         // MARKETPLACE - ROTAS PRIVADAS
-                        // ----------------------------------
+                        // ==========================================
 
-                        // Estas regras precisam vir antes
-                        // das consultas publicas
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/products/mine",
                                 "/services/mine"
                         ).authenticated()
 
-                        // ----------------------------------
+                        // ==================================
                         // MARKETPLACE - CONSULTAS PUBLICAS
-                        // ----------------------------------
+                        // ==========================================
 
                         .requestMatchers(
                                 HttpMethod.GET,
@@ -123,37 +120,21 @@ public class SecurityConfig {
                                 "/services/*"
                         ).permitAll()
 
-                        // ----------------------------------
+                        // ==================================
                         // PORTFOLIO - CONSULTAS PUBLICAS
-                        // ----------------------------------
+                        // ==========================================
 
-                        // Lista geral de trabalhos
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/portfolio"
-                        ).permitAll()
-
-                        // Trabalho individual
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/portfolio/*"
-                        ).permitAll()
-
-                        // Portfolio de determinado artista
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/artists/*/portfolio"
-                        ).permitAll()
-
-                        // Arquivos de imagens do portfolio
-                        .requestMatchers(
-                                HttpMethod.GET,
+                                "/portfolio",
+                                "/portfolio/*",
+                                "/artists/*/portfolio",
                                 "/portfolio/images/*/file"
                         ).permitAll()
 
-                        // ----------------------------------
+                        // ==================================
                         // IMAGENS PUBLICAS DO MARKETPLACE
-                        // ----------------------------------
+                        // ==========================================
 
                         .requestMatchers(
                                 HttpMethod.GET,
@@ -165,30 +146,27 @@ public class SecurityConfig {
                                 "/uploads/**"
                         ).permitAll()
 
-                        // ----------------------------------
-                        // ROTAS PROTEGIDAS
-                        // ----------------------------------
+                        // ==================================
+                        // DEMAIS ROTAS PROTEGIDAS
+                        // ==========================================
 
-                        // Criacao, edicao e exclusao exigem
-                        // JWT. A verificacao de propriedade
-                        // e feita pelos respectivos servicos.
                         .anyRequest().authenticated()
                 )
 
                 // ==================================
-                // TRATAMENTO DE ACESSO NEGADO
-                // ==================================
+                // TRATAMENTO DE ERROS DE SEGURANCA
+                // ==========================================
 
                 .exceptionHandling(ex -> ex
 
-                        // Sem autenticacao
+                        // Usuario nao autenticado: 401
                         .authenticationEntryPoint(
                                 new HttpStatusEntryPoint(
                                         HttpStatus.UNAUTHORIZED
                                 )
                         )
 
-                        // Autenticado, sem permissao
+                        // Usuario sem permissao: 403
                         .accessDeniedHandler(
                                 (request, response, exception) ->
                                         response.setStatus(
@@ -198,8 +176,8 @@ public class SecurityConfig {
                 )
 
                 // ==================================
-                // AUTENTICACAO JWT
-                // ==================================
+                // FILTRO JWT
+                // ==========================================
 
                 .addFilterBefore(
                         jwtAuthFilter,
@@ -207,8 +185,8 @@ public class SecurityConfig {
                 )
 
                 // ==================================
-                // LIMITACAO DE REQUISICOES
-                // ==================================
+                // RATE LIMIT
+                // ==========================================
 
                 .addFilterBefore(
                         rateLimitFilter,
@@ -228,14 +206,21 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        // Front-end local
+        // Origens do front-end em desenvolvimento
         configuration.setAllowedOrigins(
                 List.of(
+                        "http://localhost:3000",
+                        "http://127.0.0.1:3000",
                         "http://localhost:5173",
-                        "http://localhost:3000"
+                        "http://127.0.0.1:5173",
+                        "http://localhost:8443",
+                        "http://127.0.0.1:8443",
+                        "http://localhost:8444",
+                        "http://127.0.0.1:8444"
                 )
         );
 
+        // Metodos HTTP permitidos
         configuration.setAllowedMethods(
                 List.of(
                         "GET",
@@ -248,6 +233,7 @@ public class SecurityConfig {
                 )
         );
 
+        // Cabecalhos permitidos
         configuration.setAllowedHeaders(
                 List.of(
                         "Authorization",
@@ -256,13 +242,15 @@ public class SecurityConfig {
                 )
         );
 
+        // Cabecalhos expostos ao front-end
         configuration.setExposedHeaders(
                 List.of("Retry-After")
         );
 
-        // JWT enviado pelo cabecalho Authorization
+        // JWT por Authorization, sem cookies de sessao
         configuration.setAllowCredentials(false);
 
+        // Cache das verificacoes CORS
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =

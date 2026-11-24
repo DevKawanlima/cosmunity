@@ -1,0 +1,58 @@
+/* Interface das notificacoes reais do CosMunity */
+.real-notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #8b5cf6;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  pointer-events: none;
+}
+.real-notifications .real-notif-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.real-notifications .real-notif-head button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.real-notifications .real-notif-filters {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  padding-bottom: 6px;
+}
+.real-notifications .real-notif-filters button {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.real-notifications .real-notif-content {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  flex: 1;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.real-notifications .real-notif-content p { overflow-wrap: anywhere; }
+.real-notifications .real-notif-delete {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  padding: 4px;
+}
+.real-notifications .real-notif-delete:hover { opacity: 1; }
+.real-notifications .nm-list { max-height: min(65vh, 480px); overflow-y: auto; }
+.real-notifications .nm-item { display: flex; gap: 8px; align-items: flex-start; }
+.real-notifications button:disabled { cursor: wait; opacity: 0.6; }

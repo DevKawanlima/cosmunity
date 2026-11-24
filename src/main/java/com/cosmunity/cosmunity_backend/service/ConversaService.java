@@ -505,7 +505,9 @@ public class ConversaService {
                 conversa.getCriadaEm(),
                 conversa.getAtualizadaEm(),
                 ultimaMensagem,
-                naoLidas
+                naoLidas,
+                conversa.getUsuario().getFotoUrl(),
+                conversa.getUsuarioDoArtista().getFotoUrl()
         );
     }
 

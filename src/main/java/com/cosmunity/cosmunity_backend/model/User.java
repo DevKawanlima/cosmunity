@@ -2,6 +2,7 @@
 package com.cosmunity.cosmunity_backend.model;
 
 import jakarta.persistence.*;
+
 import java.time.OffsetDateTime;
 
 @Entity
@@ -24,6 +25,12 @@ public class User {
 
     @Column(name = "foto_url")
     private String fotoUrl;
+
+    @Column(name = "cidade", length = 160)
+    private String cidade;
+
+    @Column(name = "biografia", length = 240)
+    private String biografia;
 
     @Column(name = "email_confirmado", nullable = false)
     private Boolean emailConfirmado = false;
@@ -77,6 +84,22 @@ public class User {
 
     public void setFotoUrl(String fotoUrl) {
         this.fotoUrl = fotoUrl;
+    }
+
+    public String getCidade() {
+        return cidade;
+    }
+
+    public void setCidade(String cidade) {
+        this.cidade = cidade;
+    }
+
+    public String getBiografia() {
+        return biografia;
+    }
+
+    public void setBiografia(String biografia) {
+        this.biografia = biografia;
     }
 
     public Boolean getEmailConfirmado() {

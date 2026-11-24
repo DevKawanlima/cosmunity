@@ -95,6 +95,56 @@ public class UserService {
 
         usuario.setNome(nome);
 
+        // ======================================
+        // ATUALIZAR CIDADE
+        // ======================================
+        //
+        // null: preserva a cidade cadastrada.
+        // vazio: remove a cidade.
+        // texto: atualiza a cidade.
+
+        if (request.cidade() != null) {
+
+            String cidade = request.cidade().strip();
+
+            if (cidade.length() > 160) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A cidade deve possuir no máximo 160 caracteres."
+                );
+            }
+
+            usuario.setCidade(
+                    cidade.isBlank() ? null : cidade
+            );
+        }
+
+        // ======================================
+        // ATUALIZAR BIOGRAFIA
+        // ======================================
+        //
+        // null: preserva a biografia cadastrada.
+        // vazio: remove a biografia.
+        // texto: atualiza a biografia.
+
+        if (request.biografia() != null) {
+
+            String biografia = request.biografia().strip();
+
+            if (biografia.length() > 240) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A biografia deve possuir no máximo 240 caracteres."
+                );
+            }
+
+            usuario.setBiografia(
+                    biografia.isBlank() ? null : biografia
+            );
+        }
+
         return paraResposta(
                 userRepository.save(usuario)
         );
@@ -407,6 +457,8 @@ public class UserService {
                 usuario.getEmail(),
                 usuario.getNome(),
                 usuario.getFotoUrl(),
+                usuario.getCidade(),
+                usuario.getBiografia(),
                 usuario.getEmailConfirmado(),
                 usuario.getAtivo()
         );

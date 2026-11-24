@@ -1,0 +1,7 @@
+spring.datasource.password=TROQUE_PELA_SENHA_DO_SEU_BANCO
+
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+
+jwt.secret=TROQUE_POR_UMA_CHAVE_SECRETA_COM_32_CARACTERES_OU_MAIS
+jwt.expiration-ms=86400000

@@ -5,6 +5,7 @@ import com.cosmunity.cosmunity_backend.dto.LoginRequest;
 import com.cosmunity.cosmunity_backend.dto.LoginResponse;
 import com.cosmunity.cosmunity_backend.dto.RegisterRequest;
 import com.cosmunity.cosmunity_backend.dto.UserResponse;
+
 import com.cosmunity.cosmunity_backend.model.User;
 import com.cosmunity.cosmunity_backend.repository.UserRepository;
 import com.cosmunity.cosmunity_backend.security.JwtService;
@@ -58,7 +59,10 @@ public class AuthService {
         );
     }
 
-    // Cadastro de usuário
+    // ==========================================
+    // CADASTRO DE USUARIO
+    // ==========================================
+
     public UserResponse register(RegisterRequest request) {
 
         String email = normalizarEmail(request.email());
@@ -86,12 +90,17 @@ public class AuthService {
             usuario.setEmailConfirmado(false);
             usuario.setAtivo(true);
 
+            // Dados opcionais serao preenchidos
+            // posteriormente na edicao de perfil.
+            usuario.setCidade(null);
+            usuario.setBiografia(null);
+
             User usuarioSalvo = userRepository.save(usuario);
 
             return paraResposta(usuarioSalvo);
         });
 
-        // Envio do código após a conclusão do cadastro
+        // Envio do codigo apos a conclusao do cadastro.
         try {
 
             emailVerificationService.solicitarConfirmacao(email);
@@ -107,7 +116,10 @@ public class AuthService {
         return resposta;
     }
 
-    // Login do usuário
+    // ==========================================
+    // LOGIN DO USUARIO
+    // ==========================================
+
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
 
@@ -125,6 +137,7 @@ public class AuthService {
                 .orElseThrow(this::credenciaisInvalidas);
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
+
             throw credenciaisInvalidas();
         }
 
@@ -132,10 +145,11 @@ public class AuthService {
                 request.senha(),
                 usuario.getSenhaHash()
         )) {
+
             throw credenciaisInvalidas();
         }
 
-        // Exige confirmação de e-mail
+        // Exige confirmacao de e-mail antes do login.
         if (!Boolean.TRUE.equals(usuario.getEmailConfirmado())) {
 
             throw new ResponseStatusException(
@@ -144,7 +158,7 @@ public class AuthService {
             );
         }
 
-        // Geração do JWT com a versão atual do usuário
+        // Geracao do JWT com a versao atual do usuario.
         String token = jwtService.gerarToken(
                 usuario.getEmail(),
                 usuario.getTokenVersion()
@@ -155,6 +169,10 @@ public class AuthService {
                 paraResposta(usuario)
         );
     }
+
+    // ==========================================
+    // NORMALIZAR E-MAIL
+    // ==========================================
 
     private String normalizarEmail(String email) {
 
@@ -167,6 +185,10 @@ public class AuthService {
 
         return email.strip().toLowerCase(Locale.ROOT);
     }
+
+    // ==========================================
+    // VALIDAR SENHA
+    // ==========================================
 
     private void validarSenha(String senha) {
 
@@ -187,12 +209,20 @@ public class AuthService {
         }
     }
 
+    // ==========================================
+    // CREDENCIAIS INVALIDAS
+    // ==========================================
+
     private BadCredentialsException credenciaisInvalidas() {
 
         return new BadCredentialsException(
                 "E-mail ou senha inválidos."
         );
     }
+
+    // ==========================================
+    // CONVERTER ENTIDADE PARA USER RESPONSE
+    // ==========================================
 
     private UserResponse paraResposta(User usuario) {
 
@@ -201,6 +231,8 @@ public class AuthService {
                 usuario.getEmail(),
                 usuario.getNome(),
                 usuario.getFotoUrl(),
+                usuario.getCidade(),
+                usuario.getBiografia(),
                 usuario.getEmailConfirmado(),
                 usuario.getAtivo()
         );
