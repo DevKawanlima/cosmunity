@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.cosmunity.cosmunity_backend.service.ArquivoPortfolioServiceTest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.307 s -- in com.cosmunity.cosmunity_backend.service.ArquivoPortfolioServiceTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.228 s -- in com.cosmunity.cosmunity_backend.service.ArquivoPortfolioServiceTest

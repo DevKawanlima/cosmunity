@@ -50,6 +50,8 @@ import {
   register as registerApi,
   verifyEmail as verifyEmailApi,
   resendCode as resendCodeApi,
+  forgotPassword as forgotPasswordApi,
+  resetPassword as resetPasswordApi,
 } from '../services/auth'
 
 // ==========================================
@@ -571,7 +573,7 @@ export function VerifyEmail() {
         'success',
         'Solicitação processada',
         backendMode
-          ? 'Confira o Mailpit para visualizar o código de teste.'
+          ? 'Confira a caixa de entrada e a pasta de spam do seu e-mail.'
           : 'Novo código de demonstração solicitado.'
       )
     } catch (error) {
@@ -617,7 +619,7 @@ export function VerifyEmail() {
             O código foi enviado para{' '}
             <b>{email || 'seu e-mail'}</b>.{' '}
             {backendMode
-              ? 'No ambiente local, confira a mensagem no Mailpit.'
+              ? 'Confira sua caixa de entrada e também a pasta de spam.'
               : 'Use um código de seis dígitos para continuar na demonstração.'}
           </span>
         </div>
@@ -669,8 +671,7 @@ export function VerifyEmail() {
 
         {backendMode ? (
           <small className="proto-hint">
-            Desenvolvimento: visualize as mensagens em
-            http://127.0.0.1:8025/
+            O código de confirmação expira em 10 minutos.
           </small>
         ) : (
           <small className="proto-hint">
@@ -809,58 +810,93 @@ export function Login() {
 
 // ==========================================
 // RECUPERACAO DE SENHA
-// MANTIDA COMO NO PROTOTIPO ATUAL
+// ENVIO REAL DO CODIGO PELO BACKEND / BREVO
 // ==========================================
+
+const RECOVERY_EMAIL_KEY = 'cosmunity_recovery_email'
 
 export function Forgot() {
   const { go, toast } = useApp()
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(
+    () => sessionStorage.getItem(RECOVERY_EMAIL_KEY) ?? ''
+  )
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [left, restart] = useCountdown(30)
 
-  const send = () => {
-    if (!emailOk(email)) {
-      return setErr(true)
+  const send = async () => {
+    const normalizedEmail = email.trim()
+
+    if (!emailOk(normalizedEmail)) {
+      setErr(true)
+      toast('error', 'E-mail inválido', 'Digite um e-mail válido.')
+      return
     }
 
-    setSent(true)
-    toast('success', 'Instruções enviadas')
+    if (loading) return
+    setErr(false)
+    setLoading(true)
+
+    try {
+      if (backendMode) {
+        await forgotPasswordApi(normalizedEmail)
+      }
+
+      sessionStorage.setItem(RECOVERY_EMAIL_KEY, normalizedEmail)
+      setEmail(normalizedEmail)
+      setSent(true)
+      restart()
+      toast('success', 'Solicitação processada', 'Confira seu e-mail para obter o código de recuperação.')
+    } catch (error) {
+      toast(
+        'error',
+        'Não foi possível solicitar a recuperação',
+        error instanceof Error ? error.message : 'Tente novamente.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (backendMode) {
-    return (
-      <AuthLayout title="Recuperar senha" subtitle="A recuperação de senha por e-mail ainda não está disponível nesta versão." back={['Voltar ao login', 4]}>
-        <div className="info-card">
-          <ShieldCheck size={18} />
-          <span>Para sua segurança, nenhum e-mail será enviado e nenhuma senha será alterada nesta tela. O recurso precisa de integração com o servidor.</span>
-        </div>
-        <Btn full variant="secondary" onClick={() => go(4)}>Voltar ao login</Btn>
-      </AuthLayout>
-    )
+  const resend = async () => {
+    if (resending || left > 0) return
+    setResending(true)
+
+    try {
+      if (backendMode) {
+        await forgotPasswordApi(email)
+      }
+
+      restart()
+      toast('success', 'Solicitação processada', 'Verifique seu e-mail novamente.')
+    } catch (error) {
+      toast(
+        'error',
+        'Não foi possível reenviar',
+        error instanceof Error ? error.message : 'Tente novamente.'
+      )
+    } finally {
+      setResending(false)
+    }
   }
 
   return (
     <AuthLayout
       title="Recuperar senha"
-      subtitle="Informe o e-mail da sua conta e enviaremos as instruções para criar uma nova senha."
+      subtitle="Informe o e-mail cadastrado para receber um código de recuperação de seis dígitos."
       back={['Voltar ao login', 4]}
     >
       {!sent ? (
         <>
           <div className="form-stack">
-            <Field
-              label="E-mail"
-              error={
-                err
-                  ? 'Digite um e-mail válido.'
-                  : ''
-              }
-            >
+            <Field label="E-mail" error={err ? 'Digite um e-mail válido.' : ''}>
               <TextInput
                 value={email}
-                onChange={(v) => {
-                  setEmail(v)
+                onChange={(value) => {
+                  setEmail(value)
                   setErr(false)
                 }}
                 type="email"
@@ -874,20 +910,15 @@ export function Forgot() {
 
           <div className="info-card">
             <ShieldCheck size={18} />
-
             <span>
-              Por segurança, mostramos a mesma mensagem
-              para qualquer e-mail informado. Se existir
-              uma conta, você receberá as instruções.
+              Por segurança, mostramos a mesma confirmação para qualquer
+              e-mail informado. Se sua conta estiver apta, você receberá
+              um código válido por 10 minutos.
             </span>
           </div>
 
-          <Btn
-            full
-            size="lg"
-            onClick={send}
-          >
-            Enviar instruções
+          <Btn full size="lg" onClick={send}>
+            {loading ? 'Enviando...' : 'Enviar código de recuperação'}
           </Btn>
         </>
       ) : (
@@ -897,32 +928,21 @@ export function Forgot() {
           </span>
 
           <h3>Verifique seu e-mail</h3>
-
           <p>
-            Se houver uma conta associada a{' '}
-            <b>{email}</b>, enviamos um link para
-            redefinir a senha. O link expira em
-            30 minutos.
+            Se houver uma conta apta associada a <b>{email}</b>,
+            enviaremos um código de seis dígitos. Ele expira em 10 minutos.
           </p>
 
-          <Btn
-            full
-            onClick={() => go(6)}
-          >
-            Abrir link de redefinição (demo)
+          <Btn full onClick={() => go(6)}>
+            Digitar código e redefinir senha
           </Btn>
 
-          <Btn
-            full
-            variant="secondary"
-            onClick={() =>
-              toast(
-                'info',
-                'Instruções reenviadas'
-              )
-            }
-          >
-            Reenviar e-mail
+          <Btn full variant="secondary" onClick={resend}>
+            {resending
+              ? 'Reenviando...'
+              : left > 0
+                ? `Reenviar código em ${left}s`
+                : 'Reenviar código'}
           </Btn>
         </div>
       )}
@@ -932,64 +952,95 @@ export function Forgot() {
 
 // ==========================================
 // REDEFINICAO DE SENHA
-// MANTIDA COMO NO PROTOTIPO ATUAL
+// VALIDACAO REAL DO CODIGO PELO BACKEND
 // ==========================================
 
 export function Reset() {
   const { go, toast } = useApp()
 
+  const [email, setEmail] = useState(
+    () => sessionStorage.getItem(RECOVERY_EMAIL_KEY) ?? ''
+  )
+  const [code, setCode] = useState('')
   const [pw, setPw] = useState('')
   const [pw2, setPw2] = useState('')
   const [tried, setTried] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const bad = passwordRules(pw).some((r) => !r[1])
+  const bad = passwordRules(pw).some((rule) => !rule[1]) || pw.length > 72
   const mismatch = pw !== pw2 || !pw2
+  const invalidCode = !/^\d{6}$/.test(code)
+  const invalidEmail = !emailOk(email.trim())
 
-  const save = () => {
+  const save = async () => {
     setTried(true)
 
-    if (bad || mismatch) {
-      return toast(
-        'error',
-        'Revise sua nova senha'
-      )
+    if (invalidEmail || invalidCode || bad || mismatch) {
+      toast('error', 'Revise os dados', 'Confira e-mail, código e nova senha.')
+      return
     }
 
-    toast(
-      'success',
-      'Senha redefinida',
-      'Entre com sua nova senha.'
-    )
+    if (loading) return
+    setLoading(true)
 
-    go(4)
-  }
+    try {
+      if (backendMode) {
+        await resetPasswordApi(email.trim(), code, pw)
+      }
 
-  if (backendMode) {
-    return (
-      <AuthLayout title="Redefinir senha" subtitle="A redefinição de senha ainda não foi integrada ao servidor." back={['Voltar ao login', 4]}>
-        <div className="info-card">
-          <ShieldCheck size={18} />
-          <span>Esta tela não altera sua senha no PostgreSQL. A redefinição estará disponível após a integração segura de tokens de recuperação.</span>
-        </div>
-        <Btn full variant="secondary" onClick={() => go(4)}>Voltar ao login</Btn>
-      </AuthLayout>
-    )
+      sessionStorage.removeItem(RECOVERY_EMAIL_KEY)
+      setCode('')
+      setPw('')
+      setPw2('')
+      toast('success', 'Senha redefinida!', 'Entre com sua nova senha.')
+      go(4)
+    } catch (error) {
+      toast(
+        'error',
+        'Não foi possível redefinir a senha',
+        error instanceof Error ? error.message : 'Confira o código e tente novamente.'
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <AuthLayout
       title="Crie uma nova senha"
-      subtitle="Escolha uma senha forte que você não usa em outros serviços."
-      back={['Voltar ao login', 4]}
+      subtitle="Digite o código recebido por e-mail e escolha sua nova senha."
+      back={['Voltar à recuperação', 5]}
     >
       <div className="form-stack">
         <Field
+          label="E-mail cadastrado"
+          error={tried && invalidEmail ? 'Digite um e-mail válido.' : ''}
+        >
+          <TextInput
+            type="email"
+            value={email}
+            onChange={(value) => setEmail(value)}
+            placeholder="voce@email.com"
+            error={tried && invalidEmail}
+            icon={<Mail size={17} />}
+          />
+        </Field>
+
+        <Field
+          label="Código de recuperação (6 dígitos)"
+          error={tried && invalidCode ? 'Informe o código de seis dígitos.' : ''}
+        >
+          <CodeInput value={code} onChange={setCode} error={tried && invalidCode} />
+        </Field>
+
+        <div className="info-card">
+          <ShieldCheck size={18} />
+          <span>Use o código recebido por e-mail. Ele expira em 10 minutos.</span>
+        </div>
+
+        <Field
           label="Nova senha"
-          error={
-            tried && bad
-              ? 'A senha não atende aos requisitos.'
-              : ''
-          }
+          error={tried && bad ? 'A senha não atende aos requisitos (máximo de 72 caracteres).' : ''}
         >
           <TextInput
             type="password"
@@ -1004,11 +1055,7 @@ export function Reset() {
 
         <Field
           label="Confirmar nova senha"
-          error={
-            tried && mismatch
-              ? 'As senhas precisam ser iguais.'
-              : ''
-          }
+          error={tried && mismatch ? 'As senhas precisam ser iguais.' : ''}
         >
           <TextInput
             type="password"
@@ -1017,17 +1064,13 @@ export function Reset() {
             placeholder="Repita a senha"
             error={tried && mismatch}
             valid={!mismatch}
+            onEnter={save}
           />
         </Field>
       </div>
 
-      <Btn
-        full
-        size="lg"
-        icon={<LockKeyhole size={17} />}
-        onClick={save}
-      >
-        Salvar nova senha
+      <Btn full size="lg" icon={<LockKeyhole size={17} />} onClick={save}>
+        {loading ? 'Salvando...' : 'Salvar nova senha'}
       </Btn>
     </AuthLayout>
   )

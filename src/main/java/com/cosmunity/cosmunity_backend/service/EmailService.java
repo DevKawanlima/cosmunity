@@ -15,11 +15,16 @@ public class EmailService {
 
     public EmailService(
             ObjectProvider<JavaMailSender> mailSenderProvider,
-            @Value("${spring.mail.username:}") String remetente
+            @Value("${cosmunity.mail.from:${spring.mail.username:}}")
+            String remetente
     ) {
         this.mailSenderProvider = mailSenderProvider;
-        this.remetente = remetente;
+        this.remetente = remetente.trim();
     }
+
+    // ==========================================
+    // CONFIRMACAO DE E-MAIL
+    // ==========================================
 
     public void enviarCodigoConfirmacao(
             String destinatario,
@@ -45,6 +50,10 @@ public class EmailService {
         enviarEmail(destinatario, assunto, mensagem);
     }
 
+    // ==========================================
+    // RECUPERACAO DE SENHA
+    // ==========================================
+
     public void enviarCodigoRecuperacao(
             String destinatario,
             String codigo
@@ -69,6 +78,10 @@ public class EmailService {
 
         enviarEmail(destinatario, assunto, mensagem);
     }
+
+    // ==========================================
+    // ENVIO VIA SMTP
+    // ==========================================
 
     private void enviarEmail(
             String destinatario,

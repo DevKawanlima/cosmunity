@@ -1,4 +1,5 @@
 com/cosmunity/cosmunity_backend/service/UsuarioAutenticadoProvider.class
+com/cosmunity/cosmunity_backend/controller/NotificacaoController$NotificacaoDto.class
 com/cosmunity/cosmunity_backend/marketplace/service/ImageStorageTransactionSupport.class
 com/cosmunity/cosmunity_backend/marketplace/service/LocalImageStorageService.class
 com/cosmunity/cosmunity_backend/marketplace/repository/ProductRepository.class
@@ -41,6 +42,7 @@ com/cosmunity/cosmunity_backend/marketplace/repository/ProductImageRepository.cl
 com/cosmunity/cosmunity_backend/dto/MensagemComunidadeRequest.class
 com/cosmunity/cosmunity_backend/security/RateLimitFilter$Resultado.class
 com/cosmunity/cosmunity_backend/marketplace/dto/ServiceListingResponse.class
+com/cosmunity/cosmunity_backend/controller/NotificacaoController.class
 com/cosmunity/cosmunity_backend/model/Comunidade.class
 com/cosmunity/cosmunity_backend/repository/TrabalhoPortfolioRepository.class
 com/cosmunity/cosmunity_backend/model/MensagemPrivada.class

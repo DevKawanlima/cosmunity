@@ -16,6 +16,8 @@ CREATE TABLE usuario (
     email VARCHAR(255) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
     foto_url TEXT,
+    cidade VARCHAR(160),
+    biografia VARCHAR(240),
     email_confirmado BOOLEAN NOT NULL DEFAULT FALSE,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

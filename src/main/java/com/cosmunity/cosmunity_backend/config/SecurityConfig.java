@@ -6,6 +6,7 @@ import com.cosmunity.cosmunity_backend.security.RateLimitFilter;
 
 import jakarta.servlet.DispatcherType;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,15 +27,21 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final String frontendPublicUrl;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(
+            JwtAuthFilter jwtAuthFilter,
+            @Value("${COSMUNITY_FRONTEND_URL:}") String frontendPublicUrl
+    ) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.frontendPublicUrl = frontendPublicUrl;
     }
 
     // ==========================================
@@ -55,18 +62,19 @@ public class SecurityConfig {
             HttpSecurity http
     ) throws Exception {
 
-        RateLimitFilter rateLimitFilter = new RateLimitFilter();
+        RateLimitFilter rateLimitFilter =
+                new RateLimitFilter();
 
         http
-                // API REST com JWT
+                // API REST com JWT.
                 .csrf(csrf -> csrf.disable())
 
-                // Habilita CORS
+                // Habilita CORS com origens controladas.
                 .cors(cors -> cors.configurationSource(
                         corsConfigurationSource()
                 ))
 
-                // Nao utiliza sessoes no servidor
+                // API sem sessoes no servidor.
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
@@ -79,7 +87,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Tratamento interno de erros
+                        // Tratamento interno de erros.
                         .dispatcherTypeMatchers(
                                 DispatcherType.ERROR
                         ).permitAll()
@@ -154,19 +162,19 @@ public class SecurityConfig {
                 )
 
                 // ==================================
-                // TRATAMENTO DE ERROS DE SEGURANCA
+                // TRATAMENTO DE ERROS
                 // ==========================================
 
                 .exceptionHandling(ex -> ex
 
-                        // Usuario nao autenticado: 401
+                        // Sem autenticacao: 401.
                         .authenticationEntryPoint(
                                 new HttpStatusEntryPoint(
                                         HttpStatus.UNAUTHORIZED
                                 )
                         )
 
-                        // Usuario sem permissao: 403
+                        // Sem permissao: 403.
                         .accessDeniedHandler(
                                 (request, response, exception) ->
                                         response.setStatus(
@@ -185,7 +193,7 @@ public class SecurityConfig {
                 )
 
                 // ==================================
-                // RATE LIMIT
+                // LIMITACAO DE REQUISICOES
                 // ==========================================
 
                 .addFilterBefore(
@@ -206,8 +214,8 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        // Origens do front-end em desenvolvimento
-        configuration.setAllowedOrigins(
+        // Origens utilizadas no desenvolvimento local.
+        List<String> allowedOrigins = new ArrayList<>(
                 List.of(
                         "http://localhost:3000",
                         "http://127.0.0.1:3000",
@@ -220,7 +228,33 @@ public class SecurityConfig {
                 )
         );
 
-        // Metodos HTTP permitidos
+        // Dominio publico configurado no ambiente.
+        // Nao usamos "*" para liberar origens arbitrarias.
+        if (frontendPublicUrl != null
+                && !frontendPublicUrl.isBlank()) {
+
+            String origin = frontendPublicUrl.trim();
+
+            // Remove barras finais, caso existam.
+            origin = origin.replaceAll("/+$", "");
+
+            if (!origin.matches(
+                    "^https://[a-zA-Z0-9.-]+(?::[0-9]+)?$"
+            )) {
+                throw new IllegalArgumentException(
+                        "COSMUNITY_FRONTEND_URL deve ser uma "
+                        + "origem HTTPS valida, sem caminho."
+                );
+            }
+
+            if (!allowedOrigins.contains(origin)) {
+                allowedOrigins.add(origin);
+            }
+        }
+
+        configuration.setAllowedOrigins(allowedOrigins);
+
+        // Metodos HTTP permitidos.
         configuration.setAllowedMethods(
                 List.of(
                         "GET",
@@ -233,7 +267,7 @@ public class SecurityConfig {
                 )
         );
 
-        // Cabecalhos permitidos
+        // Cabecalhos aceitos.
         configuration.setAllowedHeaders(
                 List.of(
                         "Authorization",
@@ -242,15 +276,16 @@ public class SecurityConfig {
                 )
         );
 
-        // Cabecalhos expostos ao front-end
+        // Cabecalhos disponibilizados ao frontend.
         configuration.setExposedHeaders(
                 List.of("Retry-After")
         );
 
-        // JWT por Authorization, sem cookies de sessao
+        // JWT enviado no cabecalho Authorization.
+        // Nao utilizamos cookies de sessao.
         configuration.setAllowCredentials(false);
 
-        // Cache das verificacoes CORS
+        // Cache do preflight CORS.
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =

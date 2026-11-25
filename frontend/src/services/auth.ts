@@ -21,6 +21,10 @@ export type LoginResponse = {
   usuario: ApiUser
 }
 
+type MessageResponse = {
+  mensagem: string
+}
+
 // ==========================================
 // LOGIN COM JWT
 // ==========================================
@@ -87,8 +91,8 @@ export function logout(): void {
 export async function verifyEmail(
   email: string,
   codigo: string
-): Promise<{ mensagem: string }> {
-  return request<{ mensagem: string }>(
+): Promise<MessageResponse> {
+  return request<MessageResponse>(
     '/auth/verify-email',
     {
       method: 'POST',
@@ -106,13 +110,53 @@ export async function verifyEmail(
 
 export async function resendCode(
   email: string
-): Promise<{ mensagem: string }> {
-  return request<{ mensagem: string }>(
+): Promise<MessageResponse> {
+  return request<MessageResponse>(
     '/auth/resend-code',
     {
       method: 'POST',
       body: JSON.stringify({
         email,
+      }),
+    }
+  )
+}
+
+// ==========================================
+// SOLICITAR RECUPERACAO DE SENHA
+// ==========================================
+
+export async function forgotPassword(
+  email: string
+): Promise<MessageResponse> {
+  return request<MessageResponse>(
+    '/auth/forgot-password',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+      }),
+    }
+  )
+}
+
+// ==========================================
+// REDEFINIR SENHA COM CODIGO
+// ==========================================
+
+export async function resetPassword(
+  email: string,
+  codigo: string,
+  novaSenha: string
+): Promise<MessageResponse> {
+  return request<MessageResponse>(
+    '/auth/reset-password',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        codigo,
+        novaSenha,
       }),
     }
   )

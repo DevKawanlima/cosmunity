@@ -9,7 +9,6 @@ import {
   LogOut,
   MapPin,
   Monitor,
-  Palette,
   Pencil,
   Settings as SettingsIcon,
   ShieldCheck,
@@ -725,10 +724,8 @@ export function EditProfile() {
 
 const sections = [
   ['account', 'Conta', User],
-  ['privacy', 'Privacidade', LockKeyhole],
   ['security', 'Segurança', ShieldCheck],
   ['notif', 'Notificações', Bell],
-  ['prefs', 'Preferências', Palette],
   ['danger', 'Desativação de conta', Trash2],
 ] as const
 
@@ -784,16 +781,6 @@ export function SettingsPage() {
       <Field label="Nome de exibição"><TextInput value={profile.name} onChange={() => {}} /></Field>
       <div className="inline-actions"><Btn icon={<Pencil size={16}/>} onClick={() => go(51)}>Editar meu perfil</Btn></div>
     </>,
-    privacy: <>
-      <h2>Privacidade</h2>
-      <Notice tone="info" title="Preferências armazenadas, política pendente">
-        As opções abaixo ficam salvas na sua conta. A restrição de acesso aos perfis, comunidades, mensagens e status online ainda precisa ser aplicada aos endpoints e à interface. Não use estas opções como garantia de privacidade nesta versão.
-      </Notice>
-      <Switch checked={settings.perfilPublico} onChange={v => change('perfilPublico', v)} label="Preferência: perfil público" />
-      <Switch checked={settings.mostrarComunidades} onChange={v => change('mostrarComunidades', v)} label="Preferência: mostrar minhas comunidades" />
-      <Switch checked={settings.permitirMensagens} onChange={v => change('permitirMensagens', v)} label="Preferência: receber mensagens fora de anúncios" />
-      <Switch checked={settings.mostrarOnline} onChange={v => change('mostrarOnline', v)} label="Preferência: exibir status online" />
-    </>,
     security: <>
       <h2>Segurança</h2>
       <button className="setting-link" onClick={() => go(53)}>
@@ -817,12 +804,6 @@ export function SettingsPage() {
       <Switch checked={settings.notificarEventos} onChange={v => change('notificarEventos',v)} label="Atualizações de eventos" />
       <Switch checked={settings.resumoEmail} onChange={v => change('resumoEmail',v)} label="Resumo por e-mail" />
     </>,
-    prefs: <>
-      <h2>Preferências</h2>
-      <Field label="Idioma disponível"><Select value={settings.idioma} onChange={v => change('idioma',v)} options={['pt-BR']} /></Field>
-      <Field label="Tema preferido"><Select value={settings.tema} onChange={v => change('tema',v)} options={[['escuro','Escuro'],['automatico','Automático (preferência salva)']]} /></Field>
-      <Notice tone="info">Nesta versão a interface usa o tema escuro e está traduzida para português. A preferência automática é armazenada, mas a alternância visual ainda não está implementada.</Notice>
-    </>,
     danger: <>
       <h2>Desativação de conta</h2>
       <Notice tone="danger" title="Operação real e sensível">
@@ -833,12 +814,12 @@ export function SettingsPage() {
   }
 
   return <>
-    <PageHeading title="Configurações" description="Gerencie sua conta e suas preferências." action={<Btn variant="secondary" icon={<LogOut size={16}/>} onClick={() => openOverlay('logout')}>Sair da conta</Btn>} />
+    <PageHeading title="Configurações" description="Gerencie sua conta e suas configurações." action={<Btn variant="secondary" icon={<LogOut size={16}/>} onClick={() => openOverlay('logout')}>Sair da conta</Btn>} />
     <div className="settings-layout">
       <nav className="settings-nav">{sections.map(([id,label,Icon]) => <button key={id} className={`${tab === id ? 'active' : ''} ${id === 'danger' ? 'danger' : ''}`} onClick={() => setTab(id)}><Icon size={18}/>{label}<ChevronRight size={15}/></button>)}</nav>
       <div className="settings-body content-card">
         {loadingSettings ? <p className="muted">Carregando configurações...</p> : body[tab]}
-        {!loadingSettings && ['privacy','notif','prefs'].includes(tab) && <div className="form-actions">
+        {!loadingSettings && tab === 'notif' && <div className="form-actions">
           <Btn onClick={save} disabled={savingSettings || !dirty}>{savingSettings ? 'Salvando...' : 'Salvar preferências'}</Btn>
           {dirty && <small className="muted">Alterações ainda não salvas</small>}
         </div>}
