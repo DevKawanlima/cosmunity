@@ -1,3 +1,4 @@
+
 services:
   postgres:
     image: postgres:17
@@ -13,7 +14,14 @@ services:
       - "127.0.0.1:5433:5432"
 
     volumes:
+      # Volume persistente do PostgreSQL
       - postgres_data:/var/lib/postgresql/data
+
+      # Inicialização automática em bancos novos
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./configuracao_usuario.sql:/docker-entrypoint-initdb.d/02-configuracao-usuario.sql:ro
+      - ./evento_interesse.sql:/docker-entrypoint-initdb.d/03-evento-interesse.sql:ro
+      - ./notificacoes.sql:/docker-entrypoint-initdb.d/04-notificacoes.sql:ro
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cosmunity -d cosmunity"]
