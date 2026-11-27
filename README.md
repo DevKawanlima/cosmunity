@@ -502,6 +502,53 @@ O Vite também apresentou um **aviso de tamanho de bundle** superior a 500 kB na
 
 Esses resultados comprovam as verificações descritas, mas não substituem testes funcionais completos de todas as telas, fluxos e combinações de uso.
 
+## Observações complementares para execução no Windows
+
+Durante o teste de implantação em outro computador, foram identificados alguns ajustes necessários para a execução local.
+
+### 1. Correção de formatação do pom.xml
+
+Caso o Maven apresente o erro `Non-parseable POM`, execute no PowerShell, na raiz do projeto:
+
+```powershell
+$p = (Resolve-Path .\pom.xml).Path
+$c = [System.IO.File]::ReadAllText($p)
+[System.IO.File]::WriteAllText($p, $c.TrimStart(), [System.Text.UTF8Encoding]::new($false))
+```
+
+Esse procedimento remove espaços e linhas vazias antes da declaração XML.
+
+### 2. Configuração da chave JWT
+
+Antes de iniciar o backend, configure uma chave local:
+
+```powershell
+$env:JWT_SECRET = [Guid]::NewGuid().ToString("N") + [Guid]::NewGuid().ToString("N")
+```
+
+### 3. Configuração do frontend
+
+Antes de iniciar o frontend, execute:
+
+```powershell
+$env:VITE_API_MODE = "backend"
+$env:VITE_API_BASE = "/api"
+$env:VITE_SHOW_PROTOTYPE_NAV = "false"
+```
+
+### 4. Serviço de e-mail para testes locais
+
+Caso não existam credenciais SMTP disponíveis, utilize o Mailpit:
+
+```powershell
+docker run -d --name cosmunity-mailpit -p 127.0.0.1:1025:1025 -p 127.0.0.1:8025:8025 axllent/mailpit
+```
+
+Os códigos de confirmação poderão ser consultados em:
+
+http://127.0.0.1:8025
+
+
 ## 16. Repositório
 
 **GitHub:** https://github.com/DevKawanlima/cosmunity
