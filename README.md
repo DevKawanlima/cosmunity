@@ -502,6 +502,7 @@ O Vite também apresentou um **aviso de tamanho de bundle** superior a 500 kB na
 
 Esses resultados comprovam as verificações descritas, mas não substituem testes funcionais completos de todas as telas, fluxos e combinações de uso.
 
+
 ## 16. Repositório
 
 **GitHub:** https://github.com/DevKawanlima/cosmunity
