@@ -502,8 +502,118 @@ O Vite também apresentou um **aviso de tamanho de bundle** superior a 500 kB na
 
 Esses resultados comprovam as verificações descritas, mas não substituem testes funcionais completos de todas as telas, fluxos e combinações de uso.
 
+## 16. Instruções complementares para execução no Windows
 
-## 16. Repositório
+Para executar o CosMunity em um ambiente Windows, utilize o PowerShell e mantenha o Docker Desktop em execução.
+
+### Banco de dados
+
+Na raiz do projeto:
+
+```powershell
+docker compose --env-file database/.env -f database/docker-compose.yml up -d
+```
+
+Caso a porta 5433 esteja ocupada, identifique o serviço responsável antes de iniciar o container.
+
+### Backend
+
+Na raiz do projeto, configure as variáveis de ambiente:
+
+```powershell
+$env:DB_PASSWORD = ((Get-Content database/.env | Where-Object { $_ -match '^POSTGRES_PASSWORD=' }) -split '=', 2)[1].Trim()
+
+$env:JWT_SECRET = [Guid]::NewGuid().ToString("N") + [Guid]::NewGuid().ToString("N")
+
+$env:SPRING_PROFILES_ACTIVE = "local"
+$env:SERVER_PORT = "8080"
+```
+
+A chave JWT acima é destinada a testes locais. Sua alteração invalida os tokens emitidos anteriormente.
+
+### Configuração de e-mail — opção 1: Mailpit
+
+Para testar cadastro, confirmação de e-mail e recuperação de senha sem credenciais externas:
+
+```powershell
+docker run -d --name cosmunity-mailpit -p 127.0.0.1:1025:1025 -p 127.0.0.1:8025:8025 axllent/mailpit
+```
+
+Configure no terminal do backend:
+
+```powershell
+$env:SMTP_HOST = "localhost"
+$env:SMTP_PORT = "1025"
+$env:SMTP_AUTH = "false"
+$env:SMTP_STARTTLS = "false"
+$env:SMTP_FROM = "no-reply@cosmunity.test"
+```
+
+Os e-mails de teste estarão disponíveis em http://127.0.0.1:8025.
+
+### Configuração de e-mail — opção 2: Brevo
+
+Para enviar e-mails reais, utilize uma conta Brevo com remetente verificado e chave SMTP válida.
+
+```powershell
+$env:SMTP_HOST = "smtp-relay.brevo.com"
+$env:SMTP_PORT = "587"
+$env:SMTP_AUTH = "true"
+$env:SMTP_STARTTLS = "true"
+
+$env:SMTP_FROM = Read-Host "E-mail do remetente verificado"
+$env:SMTP_USERNAME = Read-Host "Login SMTP do Brevo"
+$env:SMTP_PASSWORD = [System.Net.NetworkCredential]::new("", (Read-Host "Chave SMTP" -AsSecureString)).Password
+```
+
+Nunca publique credenciais SMTP ou chaves JWT no repositório.
+
+### Inicialização do backend
+
+Após escolher e configurar uma das opções de e-mail, execute:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Aguarde a mensagem `Started CosmunityBackendApplication` e mantenha o terminal aberto.
+
+### Inicialização do frontend
+
+Abra outro terminal na raiz do projeto:
+
+```powershell
+cd frontend
+npm.cmd ci
+
+$env:VITE_API_MODE = "backend"
+$env:VITE_API_BASE = "/api"
+$env:VITE_SHOW_PROTOTYPE_NAV = "false"
+
+npm.cmd run dev -- --host 127.0.0.1 --port 8443
+```
+
+Acesse http://127.0.0.1:8443.
+
+Mantenha o banco, o backend e o frontend em execução simultaneamente.
+
+As variáveis de ambiente configuradas pelo PowerShell são temporárias e precisam ser configuradas novamente caso o terminal seja encerrado.
+
+### Validação em ambiente independente
+
+Em 27/11/2026, foram realizados testes de execução em outro computador, utilizando Windows, Docker, PostgreSQL, Java e Node.js.
+
+Foram validados:
+
+- Criação automática das 22 tabelas.
+- Inicialização do backend e frontend.
+- Integração entre aplicação e banco de dados.
+- Cadastro e confirmação de e-mail pelo Mailpit.
+- Login e autenticação.
+- Envio real de e-mail pelo Brevo.
+- Recuperação e redefinição de senha.
+
+## 17. Repositório
 
 **GitHub:** https://github.com/DevKawanlima/cosmunity
 
